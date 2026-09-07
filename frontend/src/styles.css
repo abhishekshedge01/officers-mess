@@ -33,20 +33,17 @@ html{
 body{
   margin:0;
   background:#f5f7fb;
+  width: 100%;
+  min-height: 100%;
+}
 
-  /*
-     Chrome / Edge support CSS zoom.
-     0.85 = visual equivalent of approximately 85%
-     browser zoom for this application.
-  */
-  zoom:var(--ui-scale);
-
-  /*
-     Compensate for the visual scale so the application
-     continues to occupy the complete physical screen.
-  */
-  width:var(--ui-scale-size);
-  min-height:var(--ui-scale-size);
+/* Apply 80% application scale specifically for desktop screens */
+@media (min-width: 901px) {
+  body {
+    zoom: var(--ui-scale);
+    width: var(--ui-scale-size);
+    min-height: var(--ui-scale-size);
+  }
 }
 
 .app-shell{
@@ -3180,4 +3177,361 @@ table {
   letter-spacing: 0.3px;
   width: 100%;
 }
+
+/* =========================================================
+   MOBILE RESPONSIVE NAVIGATION & LAYOUT (JUDGE & MOBILE VIEW)
+   ========================================================= */
+
+/* Desktop defaults */
+.mobile-topbar,
+.mobile-bottom-nav,
+.sidebar-close-btn,
+.sidebar-backdrop {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  /* Reset Shell & Main Area for Mobile */
+  .app-shell {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    min-height: 100dvh;
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  .main {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    min-height: 100vh !important;
+    min-height: 100dvh !important;
+    box-sizing: border-box;
+    padding-top: 64px !important; /* height of mobile-topbar */
+    padding-bottom: 78px !important; /* height of mobile-bottom-nav */
+  }
+
+  .content {
+    padding: 18px 14px 28px 14px !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+
+  /* Page Head Compact on Mobile */
+  .page-head {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 12px;
+    margin-bottom: 18px !important;
+  }
+
+  .page-head h1 {
+    font-size: 1.45rem !important;
+    line-height: 1.25;
+  }
+
+  .page-head p {
+    font-size: 0.88rem !important;
+  }
+
+  /* Sticky Mobile Top Navbar */
+  .mobile-topbar {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    background: linear-gradient(90deg, #052348, #072b54);
+    color: #ffffff;
+    padding: 0 16px;
+    z-index: 1050;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+    box-sizing: border-box;
+  }
+
+  .mobile-menu-btn {
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    font-size: 26px;
+    cursor: pointer;
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    padding: 0;
+    transition: background 0.15s ease;
+  }
+
+  .mobile-menu-btn:active {
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  .mobile-brand-center {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: calc(100% - 100px);
+  }
+
+  .mobile-topbar-crest {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  }
+
+  .mobile-topbar-title {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1.12rem;
+    font-weight: 700;
+    color: #f3d47d;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: 0.3px;
+  }
+
+  .mobile-notify-btn {
+    position: relative;
+    color: #ffffff;
+    font-size: 22px;
+    text-decoration: none;
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+  }
+
+  .mobile-notify-dot {
+    position: absolute;
+    top: 6px;
+    right: 5px;
+    background: #ef4444;
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 700;
+    min-width: 17px;
+    height: 17px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 3px;
+    border: 1.5px solid #052348;
+  }
+
+  /* Off-canvas Sidebar Drawer */
+  .sidebar {
+    width: 280px !important;
+    max-width: 85vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    position: fixed !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    z-index: 1200 !important;
+    transform: translateX(-100%) !important;
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    box-shadow: none;
+  }
+
+  .sidebar.sidebar-mobile-open {
+    transform: translateX(0) !important;
+    box-shadow: 6px 0 25px rgba(0, 0, 0, 0.5) !important;
+  }
+
+  .sidebar-backdrop {
+    display: block !important;
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 20, 38, 0.65);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 1150;
+    animation: fadeInBackdrop 0.2s ease;
+  }
+
+  @keyframes fadeInBackdrop {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .sidebar-close-btn {
+    display: flex !important;
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    cursor: pointer;
+    z-index: 10;
+  }
+
+  /* Bottom Navigation Bar */
+  .mobile-bottom-nav {
+    display: flex !important;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    background: #ffffff;
+    border-top: 1px solid #e2e8f0;
+    box-shadow: 0 -4px 18px rgba(0, 0, 0, 0.08);
+    z-index: 1050;
+    padding: 0 4px;
+    align-items: center;
+    justify-content: space-around;
+  }
+
+  .mobile-bottom-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: #64748b;
+    padding: 6px 2px 5px;
+    transition: all 0.15s ease;
+    border-radius: 8px;
+    position: relative;
+    max-width: 80px;
+  }
+
+  .mobile-bottom-item:hover,
+  .mobile-bottom-item.active {
+    color: #0d3870;
+  }
+
+  .mobile-bottom-item.active .mobile-bottom-icon-wrap i {
+    color: #0d3870;
+    transform: scale(1.1);
+  }
+
+  .mobile-bottom-item.active .mobile-bottom-text {
+    font-weight: 700;
+    color: #0d3870;
+  }
+
+  .mobile-bottom-icon-wrap {
+    position: relative;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mobile-bottom-icon-wrap i {
+    font-size: 20px;
+    transition: transform 0.15s ease;
+  }
+
+  .mobile-bottom-badge {
+    position: absolute;
+    top: -5px;
+    right: -10px;
+    background: #dc2626;
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 0 4px;
+    height: 15px;
+    min-width: 15px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+
+  .mobile-bottom-text {
+    font-size: 11px;
+    margin-top: 2px;
+    letter-spacing: -0.1px;
+    white-space: nowrap;
+  }
+
+  /* Responsive Cards & Grids on Mobile */
+  .card, .app-card {
+    border-radius: 12px !important;
+  }
+
+  .app-card .card-body {
+    padding: 16px !important;
+  }
+
+  /* Horizontal Scroll for Data Tables on Mobile */
+  .table-responsive {
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+  }
+
+  .table {
+    min-width: 580px;
+  }
+
+  /* Mobile Button Sizes */
+  .btn {
+    min-height: 40px;
+  }
+
+  /* Full Width Buttons in Modal / Action Bars */
+  .modal-footer .btn {
+    flex: 1;
+  }
+
+  /* Bill and Request Action Buttons Wrap */
+  .om-bill-tabs {
+    width: 100%;
+  }
+
+  .om-bill-tabs .nav-item {
+    flex: 1;
+  }
+
+  .om-bill-tabs .nav-link {
+    width: 100%;
+    text-align: center;
+    padding: 8px 10px !important;
+    font-size: 0.85rem !important;
+  }
+}
+
+/* Extra small mobile adjustments */
+@media (max-width: 480px) {
+  .mobile-topbar-title {
+    font-size: 1rem;
+  }
+
+  .content {
+    padding: 14px 10px 24px 10px !important;
+  }
+
+  .page-head h1 {
+    font-size: 1.3rem !important;
+  }
+}
+
 

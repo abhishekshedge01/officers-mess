@@ -1,16 +1,23 @@
 import React, { useEffect, useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { api, auth } from "../services/api";
 import { ROLES, roleName } from "../constants";
 
 export default function AppLayout({ children }) {
   const nav = useNavigate();
+  const location = useLocation();
 
   const [currentUser, setCurrentUser] = useState(auth.user);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
   const u = currentUser;
   const [messName, setMessName] = useState("Officers Mess");
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+
+  // Close mobile drawer on route change
+  useEffect(() => {
+    setMobileDrawerOpen(false);
+  }, [location.pathname]);
   useEffect(() => {
     const handleUserUpdated = () => {
       setCurrentUser(auth.user);
@@ -237,12 +244,103 @@ export default function AppLayout({ children }) {
     ["/change-password", "Password", "key"],
   );
 
+  /* =========================
+     BOTTOM NAV SHORTCUTS (Mobile)
+     ========================= */
+  const mobileShortcuts = [
+    { to: "/", label: "Dashboard", icon: "speedometer2" },
+  ];
+  if (u?.role === ROLES.USER) {
+    mobileShortcuts.push(
+      { to: "/book", label: "Book Stay", icon: "calendar-plus" },
+      { to: "/my-bookings", label: "My Stays", icon: "journal-check" },
+      { to: "/my-bills", label: "Bills", icon: "receipt", badge: userCounters.pendingBills },
+    );
+  } else if (u?.role === ROLES.MANAGER) {
+    mobileShortcuts.push(
+      { to: "/manager/requests", label: "Requests", icon: "hourglass-split", badge: managerCounters.pendingRequests },
+      { to: "/manager/rooms", label: "Rooms", icon: "door-open" },
+      { to: "/manager/revenue", label: "Revenue", icon: "graph-up-arrow" },
+    );
+  } else if (u?.role === ROLES.PMC) {
+    mobileShortcuts.push(
+      { to: "/pmc", label: "Ops", icon: "diagram-3" },
+      { to: "/pmc/rooms", label: "Rooms", icon: "door-open" },
+      { to: "/pmc/revenue", label: "Revenue", icon: "graph-up-arrow" },
+    );
+  } else if (u?.role === ROLES.SECRETARY) {
+    mobileShortcuts.push(
+      { to: "/secretary", label: "Ops", icon: "check2-square" },
+      { to: "/secretary/rooms", label: "Rooms", icon: "door-open" },
+      { to: "/secretary/revenue", label: "Revenue", icon: "graph-up-arrow" },
+    );
+  } else if (u?.role === ROLES.ADMIN) {
+    mobileShortcuts.push(
+      { to: "/admin", label: "Messes", icon: "building" },
+      { to: "/admin/pmc", label: "PMC", icon: "person-badge" },
+      { to: "/admin/audit-logs", label: "Logs", icon: "shield-check" },
+    );
+  }
+  mobileShortcuts.push({
+    to: "/notifications",
+    label: "Alerts",
+    icon: "bell",
+    badge: unreadNotifications,
+  });
+
   return (
     <div className="app-shell">
       {/* ==================================================
-          SIDEBAR
+          MOBILE TOP NAVBAR (Shown only on mobile <= 900px)
           ================================================== */}
-      <aside className="sidebar">
+      <header className="mobile-topbar d-md-none">
+        <button
+          className="mobile-menu-btn"
+          aria-label="Toggle navigation menu"
+          onClick={() => setMobileDrawerOpen((prev) => !prev)}
+        >
+          <i className={`bi bi-${mobileDrawerOpen ? "x-lg" : "list"}`}></i>
+        </button>
+
+        <div className="mobile-brand-center">
+          <img src="/img.png" alt="Logo" className="mobile-topbar-crest" />
+          <span className="mobile-topbar-title">{messName}</span>
+        </div>
+
+        <NavLink to="/notifications" className="mobile-notify-btn" aria-label="Notifications">
+          <i className="bi bi-bell"></i>
+          {unreadNotifications > 0 && (
+            <span className="mobile-notify-dot">
+              {unreadNotifications > 9 ? "9+" : unreadNotifications}
+            </span>
+          )}
+        </NavLink>
+      </header>
+
+      {/* ==================================================
+          MOBILE BACKDROP OVERLAY
+          ================================================== */}
+      {mobileDrawerOpen && (
+        <div
+          className="sidebar-backdrop"
+          onClick={() => setMobileDrawerOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* ==================================================
+          SIDEBAR (Desktop Fixed / Mobile Off-canvas Drawer)
+          ================================================== */}
+      <aside className={`sidebar ${mobileDrawerOpen ? "sidebar-mobile-open" : ""}`}>
+        {/* MOBILE CLOSE BUTTON */}
+        <button
+          className="sidebar-close-btn d-md-none"
+          onClick={() => setMobileDrawerOpen(false)}
+          aria-label="Close navigation"
+        >
+          <i className="bi bi-x-lg"></i>
+        </button>
+
         {/* SIDEBAR CONTENT */}
         <div className="sidebar-content">
           {/* =========================
@@ -302,6 +400,7 @@ export default function AppLayout({ children }) {
                   className={({ isActive }) =>
                     `sidebar-link ${isActive ? "active" : ""}`
                   }
+                  onClick={() => setMobileDrawerOpen(false)}
                 >
                   <i className={`bi bi-${icon}`}></i>
 
@@ -377,9 +476,9 @@ export default function AppLayout({ children }) {
           MAIN
           ================================================== */}
       <main className="main">
-        {/* USER / OFFICER DOES NOT GET TOPBAR */}
+        {/* USER / OFFICER DOES NOT GET TOPBAR ON DESKTOP */}
         {u?.role !== ROLES.USER && (
-          <header className="topbar">
+          <header className="topbar d-none d-md-flex">
             <div className="mess-brand">
               <div className="mess-logo">
                 <i className="bi bi-shield-shaded"></i>
@@ -394,6 +493,32 @@ export default function AppLayout({ children }) {
 
         <div className="content">{children}</div>
       </main>
+
+      {/* ==================================================
+          MOBILE BOTTOM NAVIGATION (Judge & Officer friendly)
+          ================================================== */}
+      <nav className="mobile-bottom-nav d-md-none" aria-label="Mobile Navigation">
+        {mobileShortcuts.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.to === "/"}
+            className={({ isActive }) =>
+              `mobile-bottom-item ${isActive ? "active" : ""}`
+            }
+          >
+            <div className="mobile-bottom-icon-wrap">
+              <i className={`bi bi-${item.icon}`}></i>
+              {Boolean(item.badge && item.badge > 0) && (
+                <span className="mobile-bottom-badge">
+                  {item.badge > 9 ? "9+" : item.badge}
+                </span>
+              )}
+            </div>
+            <span className="mobile-bottom-text">{item.label}</span>
+          </NavLink>
+        ))}
+      </nav>
     </div>
   );
 }
