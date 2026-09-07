@@ -74,7 +74,10 @@ app.use((req, res) => {
 // Global error handler
 app.use((error, req, res, next) => {
   console.error("SERVER ERROR:", error);
-  res.status(500).json({ message: "Internal server error" });
+  res.status(500).json({
+    message: error.message || "Internal server error",
+    stack: process.env.NODE_ENV === "production" ? undefined : error.stack,
+  });
 });
 
 /**
