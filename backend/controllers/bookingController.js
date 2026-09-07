@@ -1,6 +1,6 @@
 import { ObjectId } from "mongodb";
 import { getDB } from "../config/db.js";
-import { messIdFilter, resolveUserMessId } from "../utils/messHelper.js";
+import { idFilter, messIdFilter, resolveUserMessId } from "../utils/messHelper.js";
 import {
   addDays,
   dateOnly,
@@ -75,16 +75,17 @@ const cleanMember = (m, i) => {
  */
 const availabilityForStay = async (db, messId, checkInDate, checkOutDate) => {
   await markExpiredApprovedBookingsAsNoShow(db, messId);
+  const mFilter = messIdFilter(messId);
   const rooms = await db
     .collection("rooms")
-    .find({ messId, status: "ACTIVE" })
+    .find({ messId: mFilter, status: "ACTIVE" })
     .sort({ roomNumber: 1 })
     .toArray();
 
   const bookings = await db
     .collection("bookings")
     .find({
-      messId,
+      messId: mFilter,
       status: ACTIVE_STATUSES,
       checkInDate: { $lt: checkOutDate },
       checkOutDate: { $gt: checkInDate },
@@ -94,7 +95,7 @@ const availabilityForStay = async (db, messId, checkInDate, checkOutDate) => {
   const allocations = await db
     .collection("room_allocations")
     .find({
-      messId,
+      messId: mFilter,
       status: "ACTIVE",
       from: { $lt: checkOutDate },
       to: { $gt: checkInDate },
@@ -104,7 +105,7 @@ const availabilityForStay = async (db, messId, checkInDate, checkOutDate) => {
   const blocks = await db
     .collection("room_blocks")
     .find({
-      messId,
+      messId: mFilter,
       status: "ACTIVE",
       from: { $lt: checkOutDate },
       to: { $gt: checkInDate },
@@ -507,12 +508,10 @@ export const createBooking = async (req, res) => {
 
     const kid = Boolean(travellingWithKid || cleaned.some((x) => x.isChild));
     const db = getDB();
-    const messObjectId = new ObjectId(messId);
     const [mess, user] = await Promise.all([
-      db.collection("messes").findOne({ _id: messObjectId, status: "ACTIVE" }),
+      db.collection("messes").findOne({ _id: idFilter(messId), status: "ACTIVE" }),
       db.collection("users").findOne({
-        _id: new ObjectId(req.user.id),
-        role: "USER",
+        _id: idFilter(req.user.id),
         accountStatus: "ACTIVE",
       }),
     ]);
@@ -522,9 +521,11 @@ export const createBooking = async (req, res) => {
     if (!user)
       return res.status(404).json({ message: "User not found or inactive" });
 
+    const normalizedMessId = String(mess._id);
+
     const { rooms, unavailable, days } = await availabilityForStay(
       db,
-      messObjectId,
+      normalizedMessId,
       checkInDate,
       checkOutDate,
     );
@@ -573,7 +574,7 @@ export const createBooking = async (req, res) => {
       checkInDate,
       checkOutDate,
       nights: days.length,
-      messId: messObjectId,
+      messId: normalizedMessId,
       numberOfGuests: guestCount,
       purpose: String(purpose).trim(),
       status: "PENDING_MANAGER",
@@ -629,7 +630,7 @@ export const getMyBookings = async (req, res) => {
     await markExpiredApprovedBookingsAsNoShow(db);
     const bookings = await db
       .collection("bookings")
-      .find({ userId: new ObjectId(req.user.id) })
+      .find({ userId: idFilter(req.user.id) })
       .sort({ createdAt: -1 })
       .toArray();
     res.json({ count: bookings.length, bookings });
@@ -650,12 +651,12 @@ export const getBookingById = async (req, res) => {
     const db = getDB();
     const b = await db
       .collection("bookings")
-      .findOne({ _id: new ObjectId(req.params.bookingId) });
+      .findOne({ _id: idFilter(req.params.bookingId) });
     if (!b) return res.status(404).json({ message: "Booking not found" });
 
     const u = await db
       .collection("users")
-      .findOne({ _id: new ObjectId(req.user.id) });
+      .findOne({ _id: idFilter(req.user.id) });
     const owner = b.userId?.toString() === req.user.id;
     const same =
       ["PMC", "MESS_MANAGER", "MESS_SECRETARY"].includes(u?.role) &&
@@ -688,12 +689,12 @@ export const cancelBooking = async (req, res) => {
       return res.status(400).json({ message: "Invalid booking ID" });
     }
     const db = getDB();
-    const id = new ObjectId(req.params.bookingId);
+    const bookingIdFilter = idFilter(req.params.bookingId);
     const reason = (req.body?.reason || req.body?.cancellationReason || "").trim();
 
     const booking = await db.collection("bookings").findOne({
-      _id: id,
-      userId: new ObjectId(req.user.id),
+      _id: bookingIdFilter,
+      userId: idFilter(req.user.id),
     });
 
     if (!booking) {
@@ -728,7 +729,7 @@ export const cancelBooking = async (req, res) => {
 
     const now = new Date();
     await db.collection("bookings").updateOne(
-      { _id: id },
+      { _id: booking._id },
       {
         $set: {
           status: "USER_CANCELLED",
@@ -745,7 +746,7 @@ export const cancelBooking = async (req, res) => {
     await db
       .collection("room_allocations")
       .updateMany(
-        { bookingId: id, status: "ACTIVE" },
+        { bookingId: booking._id, status: "ACTIVE" },
         { $set: { status: "CANCELLED", updatedAt: now } },
       );
 
@@ -779,7 +780,7 @@ export const getMessBookings = async (req, res) => {
     const db = getDB();
     const u = await db
       .collection("users")
-      .findOne({ _id: new ObjectId(req.user.id) });
+      .findOne({ _id: idFilter(req.user.id) });
 
     const rawMessId = await resolveUserMessId(db, u);
     if (!rawMessId)
@@ -811,11 +812,12 @@ export const checkIn = async (req, res) => {
   try {
     const db = getDB();
     const manager = await db.collection("users").findOne({
-      _id: new ObjectId(req.user.id),
+      _id: idFilter(req.user.id),
       role: "MESS_MANAGER",
     });
 
-    if (!manager?.messId) {
+    const rawMessId = await resolveUserMessId(db, manager);
+    if (!rawMessId) {
       return res
         .status(403)
         .json({ message: "Manager is not assigned to a mess" });
@@ -824,12 +826,12 @@ export const checkIn = async (req, res) => {
       return res.status(400).json({ message: "Invalid booking ID" });
     }
 
-    const id = new ObjectId(req.params.bookingId);
-    const messId = new ObjectId(manager.messId);
+    const bookingIdFilter = idFilter(req.params.bookingId);
+    const mFilter = messIdFilter(rawMessId);
 
     const booking = await db.collection("bookings").findOne({
-      _id: id,
-      messId,
+      _id: bookingIdFilter,
+      messId: mFilter,
       status: "APPROVED",
     });
 
@@ -868,7 +870,7 @@ export const checkIn = async (req, res) => {
     const rooms = await db
       .collection("rooms")
       .find({
-        messId,
+        messId: mFilter,
         status: { $in: ["ACTIVE", "AVAILABLE"] },
         capacity: { $gte: guestCount },
       })
@@ -884,14 +886,14 @@ export const checkIn = async (req, res) => {
     const allocations = (
       await db
         .collection("room_allocations")
-        .find({ messId, status: "ACTIVE" })
+        .find({ messId: mFilter, status: "ACTIVE" })
         .toArray()
     ).filter((a) => overlaps(bookingCheckIn, bookingCheckOut, a.from, a.to));
 
     const allocationByRoom = new Map();
     for (const allocation of allocations) {
       const roomKey = allocation.roomId?.toString();
-      if (!roomKey || allocation.bookingId?.toString() === id.toString())
+      if (!roomKey || String(allocation.bookingId) === String(booking._id))
         continue;
 
       const set = allocationByRoom.get(roomKey) || new Set();
@@ -907,7 +909,7 @@ export const checkIn = async (req, res) => {
     const otherBookings = (
       await db
         .collection("bookings")
-        .find({ messId, _id: { $ne: id }, status: ACTIVE_STATUSES })
+        .find({ messId: mFilter, _id: { $ne: booking._id }, status: ACTIVE_STATUSES })
         .toArray()
     ).filter((other) =>
       overlaps(
@@ -934,7 +936,7 @@ export const checkIn = async (req, res) => {
     const blocks = (
       await db
         .collection("room_blocks")
-        .find({ messId, status: "ACTIVE" })
+        .find({ messId: mFilter, status: "ACTIVE" })
         .toArray()
     ).filter((block) =>
       overlaps(bookingCheckIn, bookingCheckOut, block.from, block.to),
@@ -979,13 +981,13 @@ export const checkIn = async (req, res) => {
     await db
       .collection("room_allocations")
       .updateMany(
-        { bookingId: id, status: "ACTIVE" },
+        { bookingId: booking._id, status: "ACTIVE" },
         { $set: { status: "REPLACED", updatedAt: now } },
       );
 
     const allocation = {
-      bookingId: id,
-      messId,
+      bookingId: booking._id,
+      messId: String(booking.messId || rawMessId),
       roomId: chosen._id,
       roomNumber: chosen.roomNumber,
       from: bookingCheckIn,
@@ -1009,7 +1011,7 @@ export const checkIn = async (req, res) => {
     await db.collection("room_allocations").insertOne(allocation);
 
     const updateResult = await db.collection("bookings").updateOne(
-      { _id: id, messId, status: "APPROVED" },
+      { _id: booking._id, status: "APPROVED" },
       {
         $set: {
           status: "CHECKED_IN",
@@ -1024,7 +1026,7 @@ export const checkIn = async (req, res) => {
     );
 
     await broadcastMessEvent(db, {
-      messId,
+      messId: booking.messId,
       userId: booking.userId,
       type: "CHECK_IN",
       title: "Guest checked in",
@@ -1059,10 +1061,9 @@ export const requestCheckout = async (req, res) => {
       return res.status(400).json({ message: "Invalid booking ID" });
     }
     const db = getDB();
-    const id = new ObjectId(req.params.bookingId);
     const booking = await db
       .collection("bookings")
-      .findOne({ _id: id, userId: new ObjectId(req.user.id) });
+      .findOne({ _id: idFilter(req.params.bookingId), userId: idFilter(req.user.id) });
 
     if (!booking) return res.status(404).json({ message: "Booking not found" });
     if (booking.status !== "CHECKED_IN") {
@@ -1079,7 +1080,7 @@ export const requestCheckout = async (req, res) => {
 
     const requestedAt = new Date();
     await db.collection("bookings").updateOne(
-      { _id: id, userId: new ObjectId(req.user.id), status: "CHECKED_IN" },
+      { _id: booking._id, status: "CHECKED_IN" },
       {
         $set: {
           status: "CHECKOUT_REQUESTED",
@@ -1115,7 +1116,7 @@ export const checkOut = async (req, res) => {
   try {
     const db = getDB();
     const manager = await db.collection("users").findOne({
-      _id: new ObjectId(req.user.id),
+      _id: idFilter(req.user.id),
       role: "MESS_MANAGER",
     });
 
@@ -1127,9 +1128,8 @@ export const checkOut = async (req, res) => {
     if (!ObjectId.isValid(req.params.bookingId))
       return res.status(400).json({ message: "Invalid booking ID" });
 
-    const id = new ObjectId(req.params.bookingId);
     const booking = await db.collection("bookings").findOne({
-      _id: id,
+      _id: idFilter(req.params.bookingId),
       messId: messIdFilter(rawMessId),
       status: { $in: ["CHECKED_IN", "CHECKOUT_REQUESTED"] },
     });

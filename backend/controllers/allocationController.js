@@ -95,6 +95,7 @@ export const allocateApprovedBooking = async (db, booking, manager) => {
       0,
   );
   const childRate = Number(chosen.rates?.CHILD ?? 0);
+  const messId = String(booking.messId);
 
   const allocation = {
     bookingId: booking._id,

@@ -174,7 +174,7 @@ export const getMyMess = async (req, res) => {
     const db = getDB();
     const mess = await db
       .collection("messes")
-      .findOne({ _id: new ObjectId(manager.messId) });
+      .findOne({ _id: idFilter(manager.messId) });
     if (!mess) {
       return res.status(404).json({ message: "Assigned mess not found" });
     }
