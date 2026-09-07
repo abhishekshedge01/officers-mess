@@ -34,52 +34,50 @@ export const protect = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const userIdObj = new ObjectId(decoded.id);
+    req.user = decoded;
 
-    // Look for active session in MongoDB
-    const session = await db.collection("sessions").findOne({
-      token,
-      userId: userIdObj,
-      expiresAt: { $gt: new Date() },
-    });
-
-    if (session) {
-      await db.collection("sessions").updateOne(
-        { _id: session._id },
-        { $set: { lastSeenAt: new Date() } }
-      );
-      req.session = session;
-    } else {
-      // In serverless / multi-instance setups or if session document TTL expired before JWT:
-      // Verify user is still active in users collection to keep authorized sessions intact
-      const activeUser = await db.collection("users").findOne({ _id: userIdObj });
-      if (!activeUser || (activeUser.accountStatus && activeUser.accountStatus !== "ACTIVE")) {
-        return res.status(401).json({ message: "Session expired or logged out", code: "SESSION_EXPIRED" });
+    // Best-effort session tracking (non-blocking for serverless/cold-start reliability)
+    try {
+      const now = new Date();
+      let userFilter = null;
+      if (decoded.id && ObjectId.isValid(decoded.id)) {
+        userFilter = { $or: [{ _id: new ObjectId(decoded.id) }, { _id: decoded.id }] };
+      } else if (decoded.id) {
+        userFilter = { _id: decoded.id };
       }
 
-      // Automatically recreate the active session entry for this valid token
-      const now = new Date();
+      // Check if user is explicitly deactivated
+      if (userFilter) {
+        const userDoc = await db.collection("users").findOne(userFilter, { projection: { accountStatus: 1 } });
+        if (userDoc && userDoc.accountStatus && userDoc.accountStatus !== "ACTIVE") {
+          return res.status(403).json({ message: "Your account is not active", code: "ACCOUNT_INACTIVE" });
+        }
+      }
+
+      // Touch / update session timestamp asynchronously
       const sessionExpiry = decoded.exp ? new Date(decoded.exp * 1000) : new Date(now.getTime() + 15 * 60 * 1000);
-      await db.collection("sessions").updateOne(
+      db.collection("sessions").updateOne(
         { token },
         {
           $setOnInsert: {
-            userId: userIdObj,
+            userId: decoded.id && ObjectId.isValid(decoded.id) ? new ObjectId(decoded.id) : decoded.id,
             token,
-            role: decoded.role || activeUser.role,
+            role: decoded.role || "USER",
             createdAt: now,
             expiresAt: sessionExpiry,
           },
           $set: { lastSeenAt: now },
         },
         { upsert: true }
-      );
+      ).catch(() => {});
+    } catch (sessionErr) {
+      // Non-fatal: do not block authenticated user if session update fails
+      console.warn("Session tracking non-fatal error:", sessionErr.message);
     }
 
-    req.user = decoded;
-    next();
+    return next();
   } catch (error) {
     console.error("AUTH MIDDLEWARE ERROR:", error.message);
-    return res.status(401).json({ message: "Invalid or expired token" });
+    return res.status(401).json({ message: "Session expired or invalid token", code: "SESSION_EXPIRED" });
   }
 };
