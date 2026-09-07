@@ -7,14 +7,21 @@ if (!process.env.MONGO_URI) {
   throw new Error("MONGO_URI is missing in .env");
 }
 
-const client = new MongoClient(process.env.MONGO_URI);
+let client;
 let db;
 
 /**
  * Connect to MongoDB Atlas/local MongoDB and ensure all required collection indexes exist.
  */
 export const connectDB = async () => {
+  if (db) return db;
+
   try {
+    if (!client) {
+      client = new MongoClient(process.env.MONGO_URI, {
+        serverSelectionTimeoutMS: 15000,
+      });
+    }
     await client.connect();
     db = client.db(process.env.DB_NAME || "officers-mess");
 
