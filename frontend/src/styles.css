@@ -1,0 +1,3183 @@
+:root{
+  font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:#f5f7fb;
+  color:#172033
+}
+
+/* =========================================================
+   GLOBAL DESKTOP UI SCALE
+   ---------------------------------------------------------
+   Designed to visually match browser zoom at 85%.
+
+   Instead of asking the user to press Ctrl + -, the whole
+   application is rendered at 85% while the layout width and
+   height are expanded so it still fills the screen.
+
+   This is intentionally done at the application level so:
+   - text becomes more compact
+   - cards fit better
+   - tables show more information
+   - the sidebar and main content balance properly
+   - the browser itself remains at 100%
+   ========================================================= */
+
+:root{
+  --ui-scale:0.80;
+  --ui-scale-size:125%;
+}
+
+html{
+  min-height:100%;
+}
+
+body{
+  margin:0;
+  background:#f5f7fb;
+
+  /*
+     Chrome / Edge support CSS zoom.
+     0.85 = visual equivalent of approximately 85%
+     browser zoom for this application.
+  */
+  zoom:var(--ui-scale);
+
+  /*
+     Compensate for the visual scale so the application
+     continues to occupy the complete physical screen.
+  */
+  width:var(--ui-scale-size);
+  min-height:var(--ui-scale-size);
+}
+
+.app-shell{
+  min-height:100vh;
+  display:flex;
+}
+
+
+/* =========================================================
+   OFFICERS MESS SIDEBAR
+   ========================================================= */
+
+.sidebar {
+    width: 285px;
+    height: 200px;
+    position: fixed;
+    left: 0;
+    top: 0;
+    box-sizing: border-box;
+    color: #fff;
+
+    /* Dark blue + faint shield image */
+    background:
+        linear-gradient(
+            180deg,
+            rgba(5, 35, 72, 0.94),
+            rgba(7, 43, 84, 0.94),
+            rgba(4, 28, 58, 0.97)
+        ),
+        url('/img.png');
+
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: auto, 125% auto;
+
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.sidebar-content {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    box-sizing: border-box;
+    padding: 28px 18px 18px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,.22) transparent;
+}
+
+.sidebar-content::-webkit-scrollbar {
+    width: 5px;
+}
+
+.sidebar-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,.22);
+    border-radius: 10px;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,.35);
+}
+
+.sidebar-brand {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    flex-shrink: 0;
+    margin-bottom: 22px;
+}
+
+.sidebar-logo-wrapper {
+    width: 118px;
+    height: 118px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 5px;
+}
+
+.sidebar-logo {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    filter:
+        sepia(1)
+        saturate(4)
+        hue-rotate(355deg)
+        brightness(1.08)
+        drop-shadow(0 4px 8px rgba(0,0,0,.30));
+}
+
+.sidebar-mess-name {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 27px;
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: .3px;
+    color: #f2ce70;
+    margin-top: 2px;
+}
+
+.sidebar-subtitle {
+    margin-top: 7px;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: .2px;
+    color: rgba(255,255,255,.92);
+}
+
+.sidebar-divider {
+    width: 82%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    margin-top: 14px;
+}
+
+.sidebar-divider span {
+    height: 1px;
+    flex: 1;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(221,175,61,.90),
+        transparent
+    );
+}
+
+.sidebar-divider i {
+    font-size: 9px;
+    color: #e1b84b;
+}
+
+.sidebar-profile {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    padding: 12px 7px 18px;
+    margin-bottom: 14px;
+    flex-shrink: 0;
+    border-bottom: 1px solid rgba(255,255,255,.14);
+}
+
+.sidebar-profile-avatar {
+    width: 58px;
+    height: 58px;
+    min-width: 58px;
+    border-radius: 50%;
+    background: #fff;
+    color: #0a315e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid rgba(255,255,255,.9);
+    box-shadow: 0 4px 12px rgba(0,0,0,.25);
+}
+
+.sidebar-profile-avatar i {
+    font-size: 27px;
+}
+
+.sidebar-profile-details {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-profile-details strong {
+    display: block;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.3;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 5px;
+}
+
+.sidebar-profile-details span {
+    display: block;
+    font-size: 12px;
+    line-height: 1.4;
+    color: #63a9ff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 3px;
+}
+
+.sidebar-profile-details small {
+    display: block;
+    font-size: 11px;
+    line-height: 1.4;
+    color: rgba(255,255,255,.65);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sidebar-nav {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex-shrink: 0;
+}
+
+.sidebar-nav .sidebar-link {
+    width: 100%;
+    min-height: 50px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    color: rgba(255,255,255,.88);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    flex-shrink: 0;
+    transition: background .18s ease, color .18s ease, transform .18s ease;
+}
+
+.sidebar-nav .sidebar-link i {
+    width: 24px;
+    min-width: 24px;
+    font-size: 19px;
+    text-align: center;
+    color: rgba(255,255,255,.90);
+    flex-shrink: 0;
+}
+
+.sidebar-nav .sidebar-link .sidebar-link-label {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sidebar-nav .sidebar-link .notification-count-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    background: #e53e3e;
+    color: #fff;
+    flex-shrink: 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.sidebar-nav .sidebar-link:hover {
+    background: rgba(42,105,180,.35);
+    color: #fff;
+    transform: translateX(2px);
+}
+
+.sidebar-nav .sidebar-link.active {
+    background: linear-gradient(90deg, #205da4, #174b86);
+    color: #fff;
+    box-shadow: 0 5px 14px rgba(0,0,0,.18);
+}
+
+.sidebar-nav .sidebar-link.active i,
+.sidebar-nav .sidebar-link:hover i {
+    color: #fff;
+}
+
+.sidebar-logout-wrapper {
+    margin-top: auto;
+    padding-top: 18px;
+    margin-top: 25px;
+    flex-shrink: 0;
+    border-top: 1px solid rgba(255,255,255,.13);
+}
+
+.sidebar .logout {
+    width: 100%;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 11px 15px;
+    box-sizing: border-box;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: #ff6b6b;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+    transition: background .18s ease, color .18s ease;
+}
+
+.sidebar .logout i {
+    width: 24px;
+    min-width: 24px;
+    font-size: 20px;
+    text-align: center;
+}
+
+.sidebar .logout:hover {
+    background: rgba(255,75,75,.12);
+    color: #ff8585;
+}
+
+.main {
+    margin-left: 285px;
+    min-height: 117.6470588vh;
+    flex: 1;
+    background: #f5f7fb;
+}
+/* =========================================
+   TOPBAR
+   Centered Officers Mess Branding
+   ========================================= */
+
+.topbar{
+  height:82px;
+  background:#fff;
+  border-bottom:1px solid #e8ecf2;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  padding:0 30px;
+}
+
+/* Officers Mess Logo + Name */
+
+.mess-brand{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:15px;
+  text-align:center;
+}
+
+.mess-logo{
+  width:56px;
+  height:56px;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  border-radius:50%;
+
+  background:#1f2937;
+  border:2px solid #c9a227;
+
+  box-shadow:0 3px 10px rgba(0,0,0,.18);
+}
+
+.mess-logo i{
+  font-size:30px;
+  color:#c9a227;
+}
+
+.mess-brand strong{
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:30px;
+  font-weight:700;
+  letter-spacing:.5px;
+  color:#1f2937;
+}
+
+/* Role */
+
+.top-role{
+  position:absolute;
+  right:30px;
+
+  background:#f0f3f8;
+  border-radius:20px;
+  padding:7px 12px;
+  font-size:.82rem;
+  font-weight:600;
+}
+
+/* =========================================
+   CONTENT
+   ========================================= */
+
+.content{
+  padding:30px;
+  max-width:1500px
+}
+
+.page-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:end;
+  margin-bottom:22px
+}
+
+.page-head h1{
+  font-size:1.8rem;
+  margin:0
+}
+
+.page-head p{
+  color:#748094;
+  margin:.35rem 0 0
+}
+
+.app-card{
+  border:1px solid #e8ecf2!important;
+  box-shadow:0 8px 25px rgba(20,32,50,.05);
+  border-radius:15px
+}
+
+.metric-label{
+  text-transform:capitalize;
+  color:#778298;
+  font-size:.8rem
+}
+
+.metric{
+  font-size:2rem;
+  font-weight:700;
+  margin-top:5px
+}
+
+.empty{
+  padding:35px;
+  text-align:center;
+  color:#7b879a;
+  display:grid;
+  gap:8px;
+  justify-items:center
+}
+
+/* =========================================
+   AUTH
+   ========================================= */
+
+.auth-page{
+  min-height:100vh;
+  display:grid;
+  place-items:center;
+  padding:20px;
+  background:linear-gradient(135deg,#edf2f8,#fff)
+}
+
+.auth-card{
+  width:min(430px,100%);
+  background:#fff;
+  padding:35px;
+  border-radius:20px;
+  box-shadow:0 20px 60px rgba(20,32,50,.12)
+}
+
+.auth-logo{
+  width:55px;
+  height:55px;
+  display:grid;
+  place-items:center;
+  background:#101a2b;
+  color:#fff;
+  border-radius:14px;
+  font-size:1.5rem;
+  margin-bottom:15px
+}
+
+.auth-card h1{
+  font-size:1.7rem
+}
+
+.auth-card p{
+  color:#718096
+}
+
+/* =========================================
+   ROOMS / MEMBERS
+   ========================================= */
+
+.room-option,
+.member-card{
+  border:1px solid #e4e9f0;
+  border-radius:12px;
+  padding:15px
+}
+
+.room-option small,
+.member-line small,
+.room-list small,
+.request-row small{
+  display:block;
+  color:#78859a
+}
+
+.member-card{
+  margin-top:12px;
+  background:#fbfcfe
+}
+
+.request-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:14px 0;
+  border-bottom:1px solid #edf0f4
+}
+
+.room-list{
+  padding:10px 0;
+  border-bottom:1px solid #edf0f4
+}
+
+.notification{
+  padding:14px 0;
+  border-bottom:1px solid #edf0f4
+}
+
+.notification span{
+  display:block;
+  color:#667085;
+  margin-top:3px
+}
+
+/* =========================================
+   OCCUPANCY
+   ========================================= */
+
+.occupancy{
+  overflow:auto
+}
+
+.occupancy table{
+  font-size:.75rem;
+  white-space:nowrap
+}
+
+.occupancy th,
+.occupancy td{
+  text-align:center;
+  min-width:34px;
+  height:32px;
+  padding:4px
+}
+
+.occupancy th:first-child{
+  position:sticky;
+  left:0;
+  background:#fff;
+  z-index:2
+}
+
+.cell-available{
+  background:#f7fafc;
+  color:#9aa4b2
+}
+
+.cell-planned,
+.cell-reserved{
+  background:#dff5e8;
+  color:#17663a
+}
+
+.cell-checked_in{
+  background:#cfe2ff;
+  color:#084298;
+  font-weight:700
+}
+
+.cell-maintenance,
+.cell-blocked{
+  background:#ffe5e5
+}
+
+/* =========================================
+   FORMS
+   ========================================= */
+
+.form-label{
+  font-weight:600;
+  font-size:.88rem
+}
+
+.form-control,
+.form-select{
+  border-radius:10px;
+  padding:.65rem .75rem
+}
+
+button,
+.btn{
+  border-radius:10px
+}
+
+/* =========================================
+   CURRENT DAY + CHECK-IN
+   ========================================= */
+
+.occupancy-today{
+  background:#dbeafe !important;
+  color:#1d4ed8;
+  font-weight:700
+}
+
+.occupancy-today-cell{
+  box-shadow:inset 0 0 0 2px #60a5fa
+}
+
+.occupancy-clickable{
+  cursor:pointer
+}
+
+.occupancy-clickable:hover{
+  background:#bfdbfe !important
+}
+
+.today-key{
+  display:inline-block;
+  padding:2px 7px;
+  border-radius:4px;
+  background:#dbeafe;
+  color:#1d4ed8;
+  font-weight:600
+}
+
+.checkin-panel{
+  border-left:4px solid #2563eb
+}
+
+/* =========================================
+   CHECKOUT + PAYMENT
+   ========================================= */
+
+.checkout-panel{
+  border-left:4px solid #6f42c1
+}
+
+.checkout-panel .alert{
+  border-radius:10px
+}
+
+/* =========================================
+   AUTOCOMPLETE / MODERN OPERATIONS UI
+   ========================================= */
+
+.autocomplete-wrap{
+  position:relative
+}
+
+.autocomplete-menu{
+  position:absolute;
+  z-index:2000;
+  left:0;
+  right:0;
+  top:100%;
+  margin-top:-8px;
+  background:#fff;
+  border:1px solid #dee2e6;
+  border-radius:12px;
+  overflow:hidden
+}
+
+.autocomplete-option{
+  width:100%;
+  border:0;
+  background:#fff;
+  text-align:left;
+  padding:11px 14px;
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  transition:.15s
+}
+
+.autocomplete-option:hover{
+  background:#f1f5f9
+}
+
+.autocomplete-option span{
+  font-weight:600
+}
+
+.autocomplete-option small{
+  color:#6c757d
+}
+
+.autocomplete-empty{
+  padding:14px;
+  color:#6c757d
+}
+
+.selected-mess{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  padding:12px 14px;
+  border:1px solid #dbe4ee;
+  border-radius:12px;
+  background:#f8fafc;
+  margin:-4px 0 16px
+}
+
+.selected-mess i{
+  font-size:24px
+}
+
+.selected-mess small{
+  display:block;
+  color:#6c757d
+}
+
+.section-kicker{
+  font-size:11px;
+  letter-spacing:.12em;
+  font-weight:800;
+  color:#64748b;
+  margin-bottom:5px
+}
+
+.tariff-note{
+  display:flex;
+  gap:9px;
+  align-items:center;
+  background:#f0fdf4;
+  border:1px solid #bbf7d0;
+  color:#166534;
+  border-radius:12px;
+  padding:10px 12px;
+  margin-bottom:16px
+}
+
+/* =========================================
+   AVAILABILITY
+   ========================================= */
+
+.availability-card{
+  border:1px solid #c7ead4
+}
+
+.status-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:7px 11px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:800
+}
+
+.status-good{
+  background:#dcfce7;
+  color:#166534
+}
+
+.status-bad{
+  background:#fee2e2;
+  color:#991b1b
+}
+
+.availability-summary{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px
+}
+
+.availability-summary>div{
+  background:#f8fafc;
+  border-radius:12px;
+  padding:12px
+}
+
+.availability-summary span{
+  display:block;
+  font-size:12px;
+  color:#64748b
+}
+
+.availability-summary strong{
+  font-size:22px
+}
+
+/* =========================================
+   REVENUE METRICS
+   ========================================= */
+
+.revenue-metric{
+  height:100%;
+  min-height:112px;
+  display:flex;
+  gap:14px;
+  align-items:center;
+  padding:18px;
+  border-radius:16px;
+  background:#fff;
+  border:1px solid #e2e8f0;
+  box-shadow:0 8px 24px rgba(15,23,42,.05);
+  transition:transform .18s ease,box-shadow .18s ease
+}
+
+.revenue-metric:hover{
+  transform:translateY(-2px);
+  box-shadow:0 12px 28px rgba(15,23,42,.08)
+}
+
+.metric-icon{
+  width:48px;
+  height:48px;
+  flex:0 0 48px;
+  display:grid;
+  place-items:center;
+  border-radius:14px;
+  font-size:21px
+}
+
+.revenue-metric-navy .metric-icon{
+  background:#10213a;
+  color:#fff
+}
+
+.revenue-metric-green .metric-icon{
+  background:#e3f5e7;
+  color:#23813e
+}
+
+.revenue-metric-purple .metric-icon{
+  background:#eee8ff;
+  color:#6040a8
+}
+
+.revenue-metric-gold .metric-icon{
+  background:#fff2d5;
+  color:#b67b00
+}
+
+.metric-label{
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  color:#667085;
+  font-size:.74rem;
+  font-weight:600
+}
+
+.revenue-number{
+  font-size:25px;
+  font-weight:800;
+  line-height:1.2;
+  color:#111c2f;
+  margin:3px 0
+}
+
+.revenue-metric small{
+  color:#64748b;
+  font-size:12px
+}
+
+/* =========================================
+   REVENUE FILTERS
+   ========================================= */
+
+.revenue-filters{
+  display:flex;
+  gap:10px;
+  align-items:center
+}
+
+.revenue-filters .form-control{
+  min-width:184px
+}
+
+.revenue-filters .revenue-year{
+  width:110px;
+  min-width:110px
+}
+
+/* =========================================
+   REVENUE CATEGORY
+   ========================================= */
+
+.revenue-category-card{
+  min-height:100%
+}
+
+.chart-header-icon{
+  width:38px;
+  height:38px;
+  border:1px solid #dbe3ed;
+  border-radius:10px;
+  display:grid;
+  place-items:center;
+  color:#10213a;
+  background:#fff
+}
+
+.revenue-category-chart{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-top:18px
+}
+
+.donut-wrap{
+  width:150px;
+  min-width:150px;
+  height:150px;
+  display:grid;
+  place-items:center
+}
+
+.donut-svg{
+  width:150px;
+  height:150px;
+  overflow:visible
+}
+
+.donut-percent{
+  font-size:22px;
+  font-weight:800;
+  fill:#10213a
+}
+
+.donut-center-label{
+  font-size:8px;
+  font-weight:700;
+  letter-spacing:.12em;
+  fill:#94a3b8
+}
+
+.category-legend{
+  flex:1;
+  min-width:0;
+  display:grid;
+  gap:12px
+}
+
+.category-legend-item{
+  display:flex;
+  align-items:flex-start;
+  gap:9px
+}
+
+.category-dot{
+  width:10px;
+  height:10px;
+  min-width:10px;
+  border-radius:50%;
+  margin-top:5px
+}
+
+.category-legend-copy{
+  min-width:0
+}
+
+.category-legend-copy strong{
+  display:block;
+  font-size:13px;
+  line-height:1.25;
+  color:#172033
+}
+
+.category-legend-copy small{
+  display:block;
+  color:#64748b;
+  font-size:11px;
+  margin-top:2px
+}
+
+.category-legend-copy b{
+  display:block;
+  font-size:14px;
+  margin-top:3px;
+  color:#172033
+}
+
+/* =========================================
+   REVENUE SUMMARY
+   ========================================= */
+
+.revenue-summary-card{
+  height:100%;
+  display:flex;
+  gap:14px;
+  align-items:flex-start;
+  padding:18px
+}
+
+.revenue-summary-card .card-body{
+  display:flex;
+  gap:14px;
+  width:100%
+}
+
+.summary-icon{
+  width:48px;
+  height:48px;
+  min-width:48px;
+  display:grid;
+  place-items:center;
+  border-radius:14px;
+  font-size:21px
+}
+
+.pending-summary .summary-icon{
+  background:#ffe7eb;
+  color:#d9344a
+}
+
+.extra-summary .summary-icon{
+  background:#fff0dd;
+  color:#ed8200
+}
+
+.year-summary .summary-icon{
+  background:#e5f6e8;
+  color:#27833f
+}
+
+.revenue-summary-card h6{
+  margin-bottom:0;
+  font-weight:700
+}
+
+.revenue-summary-card .display-6{
+  font-size:25px;
+  line-height:1.2
+}
+
+/* =========================================
+   RECENT PAYMENTS
+   ========================================= */
+
+.recent-payments-card{
+  overflow:hidden
+}
+
+.revenue-table{
+  margin-bottom:0
+}
+
+.revenue-table thead th{
+  background:#f8fafc;
+  color:#334155;
+  font-size:12px;
+  font-weight:700;
+  white-space:nowrap;
+  border-bottom:1px solid #e2e8f0
+}
+
+.revenue-table tbody td{
+  font-size:13px;
+  color:#334155;
+  border-bottom:1px solid #eef2f7
+}
+
+.revenue-table code{
+  font-size:11px;
+  color:#475569
+}
+
+/* =========================================
+   PAID STATUS
+   ========================================= */
+
+.payment-status-paid{
+  display:inline-flex;
+  align-items:center;
+  padding:5px 10px;
+  border-radius:20px;
+  background:#e8f7ee;
+  color:#198754;
+  border:1px solid #b9e6c9;
+  font-size:.78rem;
+  font-weight:700;
+  white-space:nowrap
+}
+
+/* =========================================
+   REVENUE BAR CHART
+   ========================================= */
+
+.revenue-chart{
+  height:205px;
+  display:flex;
+  align-items:end;
+  gap:10px;
+  padding:20px 8px 0;
+  border-bottom:1px solid #e2e8f0
+}
+
+.revenue-bar-wrap{
+  flex:1;
+  min-width:34px;
+  height:180px;
+  display:flex;
+  flex-direction:column;
+  justify-content:end;
+  align-items:center;
+  gap:6px
+}
+
+.revenue-bar{
+  width:100%;
+  max-width:48px;
+  background:#10213a;
+  border-radius:8px 8px 0 0;
+  position:relative;
+  min-height:4px
+}
+
+.revenue-bar span{
+  position:absolute;
+  bottom:100%;
+  left:50%;
+  transform:translateX(-50%);
+  font-size:9px;
+  white-space:nowrap;
+  color:#287c49
+}
+
+/* =========================================
+   LOADING
+   ========================================= */
+
+.loading-state{
+  padding:40px;
+  text-align:center;
+  color:#64748b
+}
+
+.loading-state .spinner-border{
+  margin-right:10px
+}
+
+/* =========================================
+   ROOM LIST
+   ========================================= */
+
+.room-list{
+  border:1px solid #e2e8f0;
+  border-radius:10px;
+  padding:10px;
+  margin-bottom:8px
+}
+
+.room-list small{
+  display:block;
+  color:#64748b;
+  margin:3px 0 5px
+}
+
+/* =========================================
+   REQUEST ROW
+   ========================================= */
+
+.request-row{
+  border:1px solid #e2e8f0;
+  border-radius:12px;
+  padding:12px 14px;
+  margin-bottom:9px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px
+}
+
+.request-row small{
+  display:block;
+  color:#64748b
+}
+
+/* =========================================
+   MEMBER CARD
+   ========================================= */
+
+.member-card{
+  border:1px solid #e2e8f0;
+  border-radius:14px;
+  padding:14px;
+  margin-bottom:12px;
+  background:#fbfdff
+}
+
+/* =========================================
+   BOOKING FLOW / DASHBOARD REFINEMENTS
+   ========================================= */
+
+.dashboard-user-stats .app-card{
+  min-height:150px;
+  display:flex;
+  align-items:center
+}
+
+.booking-stepper{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:0
+}
+
+.booking-stepper>div{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  color:#94a3b8;
+  padding:8px 28px;
+  position:relative
+}
+
+.booking-stepper>div+div:before{
+  content:'';
+  width:45px;
+  height:1px;
+  background:#dbe2ea;
+  position:absolute;
+  left:-22px;
+  top:50%
+}
+
+.booking-stepper span{
+  width:32px;
+  height:32px;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  border:1px solid #cbd5e1;
+  background:#fff;
+  font-weight:700
+}
+
+.booking-stepper b,
+.booking-stepper small{
+  display:block
+}
+
+.booking-stepper small{
+  font-size:11px
+}
+
+.booking-stepper .active{
+  color:#0f172a
+}
+
+.booking-stepper .active span{
+  background:#0f172a;
+  color:#fff;
+  border-color:#0f172a
+}
+
+.mess-selection-card{
+  padding:18px
+}
+
+.mess-selection-card .card-body{
+  padding:28px
+}
+
+.selected-mess-clickable{
+  cursor:pointer;
+  transition:.18s;
+  display:flex;
+  align-items:center;
+  gap:14px
+}
+
+.selected-mess-clickable:hover{
+  border-color:#94a3b8;
+  background:#f1f5f9;
+  transform:translateY(-1px)
+}
+
+.selected-mess-icon{
+  width:42px;
+  height:42px;
+  border-radius:12px;
+  background:#eef2ff;
+  display:grid;
+  place-items:center;
+  flex:0 0 auto
+}
+
+.selected-mess-icon i{
+  font-size:21px
+}
+
+.mess-selection-hint{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  justify-content:center;
+  color:#64748b;
+  font-size:12px;
+  margin-top:15px
+}
+
+.booking-stepper+.mess-selection-card{
+  min-height:430px;
+  display:flex;
+  align-items:center;
+  justify-content:center
+}
+
+.booking-stepper+.mess-selection-card .card-body{
+  width:100%
+}
+
+/* =========================================
+   MEDIUM DESKTOP
+   ========================================= */
+
+@media(max-width:1200px) and (min-width:901px){
+
+  .content{
+    width:85%;
+  }
+}
+
+
+
+/* =========================================================
+   SIDEBAR RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 900px) {
+    .sidebar {
+        width: 76px;
+    }
+
+    .sidebar-content {
+        padding: 18px 10px;
+    }
+
+    .sidebar-logo-wrapper {
+        width: 52px;
+        height: 52px;
+    }
+
+    .sidebar-mess-name,
+    .sidebar-subtitle,
+    .sidebar-divider,
+    .sidebar-profile-details,
+    .sidebar-nav .sidebar-link span,
+    .sidebar .logout span {
+        display: none;
+    }
+
+    .sidebar-profile {
+        justify-content: center;
+        border-bottom: 0;
+        padding: 10px 0 15px;
+    }
+
+    .sidebar-profile-avatar {
+        width: 48px;
+        height: 48px;
+        min-width: 48px;
+    }
+
+    .sidebar-nav .sidebar-link {
+        justify-content: center;
+        padding: 11px;
+    }
+
+    .sidebar-nav .sidebar-link i {
+        width: auto;
+        min-width: auto;
+    }
+
+    .sidebar .logout {
+        justify-content: center;
+        padding: 11px;
+    }
+
+    .sidebar .logout i {
+        width: auto;
+        min-width: auto;
+    }
+
+    .main {
+        margin-left: 76px;
+    }
+}
+
+
+/* =========================================
+   SMALL SCREENS
+   ========================================= */
+
+@media(max-width:700px){
+
+  .availability-summary{
+    grid-template-columns:1fr
+  }
+
+  .request-row{
+    align-items:flex-start;
+    flex-direction:column
+  }
+
+  .revenue-chart{
+    gap:4px
+  }
+
+  .revenue-bar-wrap{
+    min-width:24px
+  }
+
+  .revenue-bar{
+    max-width:28px
+  }
+
+  .revenue-bar span{
+    display:none
+  }
+
+  .booking-stepper>div{
+    padding:8px 10px
+  }
+
+  .booking-stepper>div+div:before{
+    width:18px;
+    left:-9px
+  }
+
+  .booking-stepper small{
+    display:none
+  }
+
+  .selected-mess-clickable .btn{
+    display:none
+  }
+}
+/* =========================================
+   MERGED OCCUPANCY BOOKING
+   One booking = one continuous block
+   ========================================= */
+
+.occupancy-booking-block {
+    height: 58px !important;
+
+    padding: 6px 12px !important;
+
+    text-align: center;
+    vertical-align: middle;
+
+    white-space: nowrap;
+    overflow: hidden;
+
+    border-radius: 0 !important;
+}
+
+
+/* Officer name inside merged block */
+
+/* Green approved booking */
+
+.occupancy td.cell-reserved.occupancy-booking-block {
+    background-color: #dff4e5 !important;
+    color: #176b35 !important;
+
+    border-top: 1px solid #b9dfc5 !important;
+    border-bottom: 1px solid #b9dfc5 !important;
+}
+
+
+/* Primary blue checked-in booking */
+
+.occupancy td.cell-checked_in.occupancy-booking-block {
+    background-color: #cfe2ff !important;
+    color: #084298 !important;
+
+    border-top: 1px solid #9ec5fe !important;
+    border-bottom: 1px solid #9ec5fe !important;
+}
+
+
+/* Hover */
+
+.occupancy td.occupancy-booking-block:hover {
+    filter: brightness(.96);
+
+    cursor: pointer;
+}
+/* =========================================
+   FIXED OCCUPANCY GRID
+   Every date column and room row stays
+   exactly the same size.
+   ========================================= */
+
+.occupancy table {
+    width: max-content;
+    min-width: 100%;
+
+    table-layout: fixed;
+
+    border-collapse: separate;
+    border-spacing: 0;
+
+    margin: 0;
+}
+
+
+/* =========================================
+   ROOM COLUMN
+   ========================================= */
+
+.occupancy thead th:first-child,
+.occupancy tbody th {
+    width: 75px !important;
+    min-width: 75px !important;
+    max-width: 75px !important;
+}
+
+
+/* =========================================
+   EVERY DATE COLUMN
+   ========================================= */
+
+.occupancy thead th:not(:first-child),
+.occupancy tbody td {
+    width: 66px !important;
+    min-width: 66px !important;
+    max-width: 66px !important;
+}
+
+
+/* =========================================
+   DATE HEADER HEIGHT
+   ========================================= */
+
+.occupancy thead th {
+    height: 54px !important;
+
+    min-height: 54px !important;
+    max-height: 54px !important;
+
+    padding: 5px 4px !important;
+
+    text-align: center;
+    vertical-align: middle;
+    overflow: hidden;
+}
+
+
+/* =========================================
+   ROOM ROW HEIGHT
+   ========================================= */
+
+.occupancy tbody tr {
+    height: 58px !important;
+    min-height: 58px !important;
+    max-height: 58px !important;
+}
+
+
+/* =========================================
+   EVERY OCCUPANCY CELL
+   ========================================= */
+
+.occupancy tbody td,
+.occupancy tbody th {
+    height: 58px !important;
+
+    min-height: 58px !important;
+    max-height: 58px !important;
+
+    padding: 5px !important;
+
+    text-align: center;
+    vertical-align: middle;
+
+    overflow: hidden;
+}
+
+
+/* =========================================
+   OFFICER NAME
+   Never changes cell size.
+   ========================================= */
+
+.occupancy-guest-name {
+    display: block;
+
+    width: 100%;
+    max-width: 100%;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+
+    font-size: 15px;
+    line-height: 1.2;
+
+    font-weight: 800;
+}
+
+
+/* =========================================
+   MERGED BOOKING BLOCK
+   ========================================= */
+
+.occupancy-booking-block {
+    height: 58px !important;
+
+    min-height: 58px !important;
+    max-height: 58px !important;
+
+    padding: 5px 8px !important;
+
+    overflow: hidden;
+
+    vertical-align: middle;
+}
+
+
+/* =========================================
+   AVAILABLE CELLS
+   ========================================= */
+
+.occupancy td.cell-available {
+    height: 58px !important;
+
+    min-height: 58px !important;
+    max-height: 58px !important;
+}
+
+
+/* =========================================
+   RESERVED
+   ========================================= */
+
+.occupancy td.cell-reserved {
+    height: 58px !important;
+
+    min-height: 58px !important;
+    max-height: 58px !important;
+}
+
+
+/* =========================================
+   CHECKED IN
+   ========================================= */
+
+.occupancy td.cell-checked_in {
+    height: 58px !important;
+
+    min-height: 58px !important;
+    max-height: 58px !important;
+}
+
+
+/* =========================================
+   TODAY
+   ========================================= */
+
+.occupancy td.occupancy-today-cell {
+    height: 58px !important;
+    min-height: 58px !important;
+    max-height: 58px !important;
+}
+/* Fixed date grid */
+.occupancy col {
+    width: 66px !important;
+}
+/* Dotted horizontal lines for occupancy rows */
+.occupancy tbody tr td,
+.occupancy tbody tr th {
+    border-bottom: 1px dotted #b8c0ca !important;
+    font-size: 14px !important;
+}
+/* Increase font size of occupancy table data */
+
+.occupancy thead th {
+    background: #f1f3f5 !important;
+    color: #212529 !important;
+    font-weight: 700;
+}
+
+/* Today's date column */
+.occupancy thead th.today {
+    background: #0d6efd !important;
+    color: #fff !important;
+}
+
+.occupancy thead th {
+    background: #f1f3f5 !important;
+    color: #212529 !important;
+    font-weight: 700;
+}
+
+/* Current date column */
+.occupancy thead th.occupancy-today {
+    background: #b6d7ff !important;
+    color: #084298 !important;
+    font-weight: 700;
+}
+
+.arrival-loader {
+    position: fixed;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.arrival-loader > div {
+    width: 150px;
+    height: 150px;
+}
+
+
+/* =========================================================
+   MOBILE SCALE RESET
+   ---------------------------------------------------------
+   Desktop uses the 85% application scale.
+   On smaller screens, return to normal 100% rendering so
+   the mobile layout remains readable.
+   ========================================================= */
+
+@media (max-width:900px){
+
+  html,
+  body{
+    width:100%;
+    min-height:100%;
+    zoom:1;
+  }
+
+  body{
+    overflow-x:hidden;
+  }
+
+  .app-shell{
+    min-height:100vh;
+  }
+
+  .sidebar{
+    height:100vh;
+  }
+
+  .main{
+    min-height:100vh;
+  }
+}
+
+
+/* =========================================================
+   FINAL VIEWPORT / SCROLL / AUTH ALIGNMENT FIX
+   ========================================================= */
+
+html,
+body {
+    width: 100%;
+    min-height: 100vh;
+    margin: 0;
+    overflow-x: hidden;
+}
+
+body {
+    zoom: 0.80;
+}
+
+.app-shell {
+    width: 100%;
+    min-height: 100vh;
+}
+
+.sidebar {
+    height: 100%;
+    flex: 0 0 270px;
+}
+
+.sidebar-content {
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    box-sizing: border-box;
+}
+
+.main {
+    min-height: 100vh;
+    height: auto;
+    min-width: 0;
+    box-sizing: border-box;
+    overflow-x: hidden;
+}
+
+.content {
+    width: 100%;
+    max-width: 1500px;
+    box-sizing: border-box;
+}
+
+/* Login / Signup / Auth pages */
+.auth-page {
+    width: 100%;
+    min-height: 100vh !important;
+    height: 100vh;
+    padding: 20px;
+    box-sizing: border-box;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: hidden;
+}
+
+.auth-card {
+    width: min(430px, 100%);
+    max-height: calc(100vh - 40px);
+    box-sizing: border-box;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Normal cards should never create viewport overflow */
+.card,
+.app-card {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* Monthly occupancy is intentionally horizontally scrollable */
+.occupancy {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+/* Prevent wide tables from forcing the whole dashboard to scroll */
+table {
+    max-width: 100%;
+    
+}
+
+@media (max-width: 900px) {
+    html,
+    body {
+        width: 100%;
+        min-height: 100%;
+        height: auto;
+        zoom: 1;
+        overflow-x: hidden;
+    }
+
+    .app-shell {
+        min-height: 100vh;
+        width: 100%;
+    }
+
+    .main {
+        min-height: 100vh;
+        height: auto;
+        min-width: 0;
+    }
+
+    .auth-page {
+        min-height: 100vh !important;
+        height: 100vh;
+        padding: 15px;
+    }
+
+    .auth-card {
+        max-height: calc(100vh - 30px);
+    }
+}
+
+/* =========================================================
+   NOTIFICATIONS
+========================================================= */
+
+.sidebar-link-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+}
+
+.notification-count-badge {
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    border-radius: 999px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #dc3545;
+    color: #fff;
+
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+
+/* Notification list */
+
+.notification-list {
+    display: flex;
+    flex-direction: column;
+}
+
+
+.notification-item {
+    display: flex;
+    gap: 16px;
+    padding: 18px 12px;
+
+    border-bottom: 1px solid #e9edf3;
+
+    cursor: pointer;
+
+    transition:
+        background .2s ease,
+        transform .2s ease;
+}
+
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+
+.notification-item:hover {
+    background: #f7f9fc;
+}
+
+
+.notification-item.unread {
+    background: #f3f7ff;
+}
+
+
+.notification-item.unread:hover {
+    background: #edf3ff;
+}
+
+
+.notification-icon {
+    width: 42px;
+    height: 42px;
+
+    flex: 0 0 42px;
+
+    border-radius: 50%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #e9f0ff;
+    color: #0d6efd;
+}
+
+
+.notification-content {
+    flex: 1;
+    min-width: 0;
+}
+
+
+.notification-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+
+.notification-top b {
+    font-size: 15px;
+    color: #172033;
+}
+
+
+.notification-message {
+    margin-top: 5px;
+
+    color: #596579;
+
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+
+.notification-time {
+    margin-top: 8px;
+
+    color: #8993a3;
+
+    font-size: 12px;
+}
+
+
+.notification-item.read .notification-icon {
+    background: #f1f3f5;
+    color: #7b8492;
+}
+
+
+.notification-item.read .notification-top b {
+    color: #4c5665;
+}
+
+.modify{
+  display:flex;
+  align-items:center;
+  justify-content: space-around;
+  min-width: 400px;
+}
+
+/* =========================================================
+   STATUS BADGES & BUTTON THEMES
+   - payment completed: font green
+   - approved: yellow
+   - cancelled: red
+   - rejected: white
+   - payment pending: grey
+   - checkin button: hover as primary and not solid primary
+   - checkout button: hover as yellow and not solid
+   ========================================================= */
+
+/* Checked in: primary colour */
+.status-badge-checked-in,
+.badge-checked-in {
+  background-color: #0d6efd !important;
+  color: #ffffff !important;
+  border: 1px solid #0b5ed7 !important;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+/* Checkout Requested: primary bg */
+.status-badge-checkout-requested,
+.badge-checkout-requested {
+  background-color: #0d6efd !important;
+  color: #ffffff !important;
+  border: 1px solid #0b5ed7 !important;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+/* Payment Completed: subtle */
+.status-badge-payment-complete,
+.badge-payment-complete {
+  background-color: #dbdbdb !important;
+  color: #444444 !important;
+  border: 1px solid #abacac !important;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+/* Approved: yellow */
+.status-badge-approved,
+.badge-approved {
+  background-color: #ffc107 !important;
+  color: #000000 !important;
+  border: 1px solid #e0a800 !important;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+/* Cancelled: red */
+.status-badge-cancelled,
+.badge-cancelled {
+  background-color: #dc3545 !important;
+  color: #ffffff !important;
+  border: 1px solid #b02a37 !important;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+/* Rejected: white/red */
+.status-badge-rejected,
+.badge-rejected {
+  background-color: #dc3545 !important;
+  color: #ffffff !important;
+  border: 1px solid #b02a37 !important;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+/* Payment Pending: green */
+.status-badge-payment-pending,
+.badge-payment-pending {
+  background-color: #198754 !important;
+  color: #ffffff !important;
+  border: 1px solid #146c43 !important;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+/* Check-in button: hover as primary and not solid primary */
+.btn-checkin-action,
+.btn-outline-primary {
+  color: #0d6efd !important;
+  border-color: #0d6efd !important;
+  background-color: transparent !important;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-checkin-action:hover:not(:disabled),
+.btn-outline-primary:hover:not(:disabled) {
+  color: #ffffff !important;
+  background-color: #0d6efd !important;
+  border-color: #0d6efd !important;
+}
+
+/* Checkout button: hover as yellow and not solid */
+.btn-checkout-action,
+.btn-outline-warning {
+  color: #b58100 !important;
+  border-color: #ffc107 !important;
+  background-color: transparent !important;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-checkout-action:hover:not(:disabled),
+.btn-outline-warning:hover:not(:disabled) {
+  color: #000000 !important;
+  background-color: #ffc107 !important;
+  border-color: #ffc107 !important;
+}
+
+/* =========================================================
+   AUTH PAGES (LOGIN & REGISTER) - MODERN REFINEMENT
+   ========================================================= */
+
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 20%, #172a45 0%, #0d1726 60%, #080e18 100%);
+  padding: 24px 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-page::before {
+  content: "";
+  position: absolute;
+  top: -150px;
+  right: -150px;
+  width: 450px;
+  height: 450px;
+  background: radial-gradient(circle, rgba(218, 165, 32, 0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.auth-page::after {
+  content: "";
+  position: absolute;
+  bottom: -150px;
+  left: -150px;
+  width: 450px;
+  height: 450px;
+  background: radial-gradient(circle, rgba(13, 110, 253, 0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.auth-card-modern {
+  width: 100%;
+  max-width: 470px;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(12px);
+  border-radius: 14px;
+  padding: 38px 36px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35), 0 0 1px rgba(255, 255, 255, 0.5) inset;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  position: relative;
+  z-index: 10;
+  animation: authFadeIn 0.4s ease-out;
+}
+
+.auth-card-wide {
+  max-width: 580px;
+}
+
+@keyframes authFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.auth-emblem-wrapper {
+  width: 76px;
+  height: 76px;
+  margin: 0 auto 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #fbfbfb;
+  border: 1px solid #e3e8ee;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  padding: 6px;
+}
+
+.auth-emblem-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+}
+
+.auth-header {
+  text-align: center;
+  margin-bottom: 26px;
+}
+
+.auth-title {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: #10213a;
+  letter-spacing: 0.3px;
+  margin-bottom: 4px;
+}
+
+.auth-subtitle {
+  font-size: 13.5px;
+  color: #64748b;
+  font-weight: 400;
+  margin-bottom: 0;
+}
+
+.auth-card-modern .form-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2b3648;
+  margin-bottom: 5px;
+}
+
+.auth-card-modern .form-control {
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 14px;
+  border: 1.5px solid #d0d7de;
+  background-color: #fdfdfd;
+  transition: all 0.2s ease;
+}
+
+.auth-card-modern .form-control:focus {
+  border-color: #10213a;
+  box-shadow: 0 0 0 3px rgba(16, 33, 58, 0.12);
+  background-color: #ffffff;
+}
+
+.auth-btn-primary {
+  background: #10213a;
+  color: #f2ce70;
+  border: 1px solid #10213a;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  border-radius: 8px;
+  padding: 11px;
+  font-size: 14.5px;
+  transition: all 0.2s ease;
+}
+
+.auth-btn-primary:hover:not(:disabled) {
+  background: #172d4c;
+  color: #ffd978;
+  border-color: #172d4c;
+  box-shadow: 0 4px 12px rgba(16, 33, 58, 0.25);
+  transform: translateY(-1px);
+}
+
+.auth-btn-primary:disabled {
+  background: #475569;
+  color: #cbd5e1;
+  border-color: #475569;
+}
+
+.auth-overlay-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(4px);
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+
+/* =========================================================
+   FINAL AUTH CENTERING FIX
+   Login + Signup
+   ---------------------------------------------------------
+   The application uses zoom: 0.80 on desktop. Therefore
+   100vh would visually cover only 80% of the screen.
+   The auth viewport is expanded to compensate for that scale.
+   ========================================================= */
+
+.auth-page {
+  width: 100%;
+  min-height: 125vh !important;
+  height: 125vh !important;
+  box-sizing: border-box;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  padding: 40px 24px !important;
+  margin: 0 !important;
+
+  position: relative;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
+/* Keep the authentication card exactly in the visual center */
+.auth-card-modern {
+  width: 100%;
+  max-width: 470px;
+  box-sizing: border-box;
+
+  margin: auto !important;
+  flex: 0 0 auto;
+
+  position: relative;
+  z-index: 10;
+}
+
+.auth-card-modern.auth-card-wide {
+  max-width: 580px;
+}
+
+/* Prevent the old generic .auth-card rules from affecting
+   the modern Login / Signup cards */
+.auth-page .auth-card-modern {
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+/* Login form spacing */
+.auth-card-modern form {
+  width: 100%;
+}
+
+/* Signup remains centered even when its card is taller */
+.auth-card-wide {
+  margin-top: auto !important;
+  margin-bottom: auto !important;
+}
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (max-width: 900px) {
+  .auth-page {
+    min-height: 100vh !important;
+    height: auto !important;
+    min-height: 100dvh !important;
+
+    padding: 30px 18px !important;
+
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .auth-card-modern,
+  .auth-card-modern.auth-card-wide {
+    max-width: 560px;
+  }
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 600px) {
+  .auth-page {
+    min-height: 100dvh !important;
+    height: auto !important;
+
+    padding: 20px 12px !important;
+    align-items: center !important;
+  }
+
+  .auth-card-modern,
+  .auth-card-modern.auth-card-wide {
+    width: 100%;
+    max-width: 100%;
+    padding: 30px 22px;
+    border-radius: 14px;
+  }
+
+  .auth-emblem-wrapper {
+    width: 68px;
+    height: 68px;
+  }
+
+  .auth-title {
+    font-size: 23px;
+  }
+
+  .auth-subtitle {
+    font-size: 13px;
+  }
+}
+
+/* =========================================================
+   VERY SMALL MOBILE
+   ========================================================= */
+
+@media (max-width: 400px) {
+  .auth-page {
+    padding: 14px 9px !important;
+  }
+
+  .auth-card-modern,
+  .auth-card-modern.auth-card-wide {
+    padding: 25px 17px;
+  }
+
+  .auth-emblem-wrapper {
+    width: 62px;
+    height: 62px;
+  }
+
+  .auth-title {
+    font-size: 21px;
+  }
+}
+
+/* =========================================================
+   ACCESSIBILITY / SAFE FOCUS
+   ========================================================= */
+
+.auth-card-modern input,
+.auth-card-modern select,
+.auth-card-modern button {
+  box-sizing: border-box;
+}
+
+.auth-card-modern input:focus,
+.auth-card-modern select:focus,
+.auth-card-modern button:focus-visible {
+  outline: none;
+}
+
+/* =========================================================
+   AIR FORCE SPLIT AUTH & GLASSMORPHISM LAYOUT
+   ========================================================= */
+.om-auth-stage {
+  position: fixed;
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 24px;
+  box-sizing: border-box;
+
+  background-color: #071a33;
+  background-image: url("/website.png");
+  background-size: 100% auto;
+  background-position: center;
+  background-repeat: no-repeat;
+
+  z-index: 99999;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.align{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 350px;
+}
+
+
+
+/* Split Card */
+.om-split-card {
+  display: flex;
+  width: 100%;
+  max-width: 1050px;
+  min-height: 600px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 20px;
+  box-shadow: 
+    0 24px 60px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.4) inset;
+  overflow: hidden;
+  position: relative;
+  z-index: 10;
+  animation: authCardPop 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.om-split-card-register {
+  max-width: 1140px;
+}
+
+@keyframes authCardPop {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Left Hero Banner */
+.om-split-hero {
+  flex: 1.25;
+  background: linear-gradient(145deg, #09264c 0%, #0d3870 55%, #081d38 100%);
+  color: #fff;
+  padding: 36px 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  text-align: center;
+}
+
+.om-hero-emblem-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 30px;
+  padding: 7px 18px;
+  backdrop-filter: blur(8px);
+}
+
+.om-hero-crest {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.om-hero-badge-text {
+  font-size: 24px;
+  letter-spacing: 1.5px;
+  color: #e0dfdf;
+}
+
+/* Big Zoomed In Lottie Animation */
+.om-hero-lottie-container {
+  width: 100%;
+  max-width: 620px;
+  height: 580px;
+  margin: 10px auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: scale(1.35);
+  transform-origin: center center;
+  filter: drop-shadow(0 14px 28px rgba(0, 0, 0, 0.4));
+}
+
+.om-hero-info {
+  margin-top: auto;
+  padding-top: 10px;
+}
+
+.om-hero-motto {
+  font-size: 40px;
+  font-family: "Brush Script MT", "Lucida Handwriting", cursive;
+  color: #90cdf4;
+  letter-spacing: 0.6px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Right Form Panel */
+.om-split-form-panel {
+  flex: 1.15;
+  padding: 40px 38px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: #ffffff;
+}
+
+.om-form-heading h3 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #10213a;
+  margin: 0 0 6px 0;
+}
+
+.om-form-heading p {
+  font-size: 13.5px;
+  color: #64748b;
+  margin: 0 0 18px 0;
+}
+
+.om-form-body .form-label {
+  font-size: 13px;
+  color: #334155;
+  margin-bottom: 6px;
+}
+
+.om-form-body .input-group-text {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #64748b;
+  border-radius: 8px 0 0 8px;
+}
+
+.om-form-body .form-control {
+  border-color: #cbd5e1;
+  border-radius: 0 8px 8px 0;
+  padding: 10px 14px;
+  font-size: 14px;
+}
+
+.om-form-body .form-control:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+}
+
+.om-btn-submit {
+  padding: 11px 20px;
+  font-size: 14.5px;
+  font-weight: 600;
+  border-radius: 8px;
+  margin-top: 6px;
+  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25);
+  transition: all 0.2s ease;
+}
+
+.om-btn-submit:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(13, 110, 253, 0.35);
+}
+
+.om-form-footer {
+  text-align: center;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #f1f5f9;
+}
+
+/* =========================================================
+   DASHBOARD STATS CARDS FULL SCREEN COVERAGE & BOTTOM GAP FIX
+   ========================================================= */
+
+.dashboard-user-stats {
+  margin-bottom: 24px;
+}
+
+.dashboard-user-stats > div {
+  display: flex;
+}
+
+.dashboard-user-stats .app-card {
+  width: 100%;
+  min-height: 155px;
+  padding: 22px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  background: #ffffff;
+}
+
+.dashboard-user-stats .app-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.dashboard-user-stats .metric {
+  font-size: 2.3rem;
+  font-weight: 700;
+  color: #10213a;
+  line-height: 1.1;
+  margin: 10px 0 8px;
+}
+
+.dashboard-user-stats .metric-label {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Eliminate excessive blank gap at bottom of layout */
+.main {
+  min-height: 100vh !important;
+}
+
+.content {
+  max-width: 100% !important;
+  padding: 28px 36px 36px 36px !important;
+  box-sizing: border-box;
+}
+
+/* Responsive Split Form */
+@media (max-width: 960px) {
+  .om-split-card,
+  .om-split-card-register {
+    flex-direction: column;
+    max-width: 540px;
+    min-height: auto;
+  }
+  .om-split-hero {
+    padding: 30px 20px;
+  }
+  .om-hero-lottie-container {
+    width: 240px;
+    height: 220px;
+    transform: scale(1.1);
+  }
+  .om-split-form-panel {
+    padding: 32px 24px;
+  }
+}
+
+
+/* =========================================================
+   PAGE TRANSITION LOADER & PAYMENT LOTTIE OVERLAY
+   ========================================================= */
+
+/* The loading lottie covers the entire page except the sidebar */
+.om-lottie-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-sizing: border-box;
+  padding: 40px 20px;
+}
+
+.om-lottie-overlay-page {
+  position: fixed;
+  top: 0;
+  left: 285px;
+  right: 0;
+  bottom: 0;
+  width: auto;
+  height: auto;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: rgba(245, 247, 251, 0.96);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 9999;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden;
+}
+
+@media (max-width: 900px) {
+  .om-lottie-overlay-page {
+    left: 0;
+    width: 100vw;
+  }
+}
+
+.om-lottie-overlay-payment {
+  position: fixed;
+  top: 0;
+  left: 285px;
+  right: 0;
+  bottom: 0;
+  width: auto;
+  height: auto;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: radial-gradient(circle at center, rgba(16, 33, 58, 0.98), rgba(7, 24, 48, 0.99));
+  color: #ffffff;
+  z-index: 9999;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden;
+}
+
+@media (max-width: 900px) {
+  .om-lottie-overlay-payment {
+    left: 0;
+  }
+}
+
+.om-lottie-box {
+  width: 640px;
+  height: 640px;
+  max-width: 94vw;
+  max-height: 85vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px auto;
+  transform: scale(1.4);
+  transform-origin: center center;
+}
+
+.om-payment-lottie-box {
+  width: 420px;
+  height: 420px;
+  margin: 0 auto 20px auto;
+  filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.4));
+}
+
+.om-lottie-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #10213a;
+  letter-spacing: 0.3px;
+  margin-bottom: 4px;
+}
+
+.om-lottie-overlay-payment .om-lottie-title {
+  color: #f2ce70;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.45rem;
+}
+
+.om-lottie-subtitle {
+  font-size: 0.92rem;
+  color: #64748b;
+}
+
+.om-lottie-overlay-payment .om-lottie-subtitle {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.98rem;
+  letter-spacing: 0.3px;
+}
+
+/* =========================================================
+   LOGIN TRANSITION OVERLAY (TRANSPARENT/BLURRED BACKDROP)
+   ========================================================= */
+
+.om-auth-stage.om-auth-stage-transitioning {
+  background: rgba(248, 250, 252, 0.78) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  transition: background 0.4s ease, backdrop-filter 0.4s ease;
+}
+
+.om-login-transition-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  animation: fadeInTrans 0.35s ease-out forwards;
+}
+
+@keyframes fadeInTrans {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.om-login-transition-box {
+  width: 880px;
+  height: 880px;
+  max-width: 96vw;
+  max-height: 85vh;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: scale(1.85);
+  transform-origin: center center;
+  filter: drop-shadow(0 18px 40px rgba(0, 0, 0, 0.28));
+}
+
+.om-login-transition-title {
+  color: #0f274a;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.65rem;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  margin-bottom: 6px;
+  text-shadow: 0 2px 8px rgba(255, 255, 255, 0.6);
+  margin-bottom: 100px;
+}
+
+.om-login-transition-sub {
+  color: #334155;
+  font-size: 0.98rem;
+  letter-spacing: 0.4px;
+}
+
+/* =========================================================
+   ERROR & 404 STATUS SCREENS
+   ========================================================= */
+
+.om-error-screen {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  background:
+    radial-gradient(ellipse at top, rgba(16, 37, 66, 0.08) 0%, transparent 70%),
+    linear-gradient(180deg, #f8fafc 0%, #eef2f6 100%);
+  box-sizing: border-box;
+}
+
+.om-error-card {
+  width: 100%;
+  max-width: 580px;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 42px 36px;
+  box-shadow:
+    0 20px 40px -15px rgba(15, 23, 42, 0.10),
+    0 0 0 1px rgba(226, 232, 240, 0.85);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  animation: fadeInErrorCard 0.4s ease-out forwards;
+}
+
+@keyframes fadeInErrorCard {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.om-error-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.om-error-invalid-url-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 6px 14px;
+  display: inline-flex;
+  align-items: center;
+  max-width: 90%;
+  word-break: break-all;
+}
+
+.om-error-code-badge {
+  display: inline-block;
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 4px 12px;
+  border-radius: 999px;
+  color: #ffffff;
+  background-color: #0f2d59;
+  letter-spacing: 0.5px;
+}
+
+.om-error-type-tag {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.om-error-icon-box {
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.6rem;
+  margin-bottom: 24px;
+  border: 2px solid;
+  transition: transform 0.3s ease;
+}
+
+.om-error-icon-box:hover {
+  transform: scale(1.06);
+}
+
+.om-error-icon-404 {
+  background: rgba(15, 45, 89, 0.08);
+  color: #0f2d59;
+  border-color: rgba(15, 45, 89, 0.2);
+}
+
+.om-error-title {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.85rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 12px;
+  line-height: 1.25;
+}
+
+.om-error-description {
+  font-size: 0.96rem;
+  line-height: 1.6;
+  color: #475569;
+  margin-bottom: 28px;
+  max-width: 480px;
+}
+
+.om-error-diagnostics {
+  width: 100%;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 24px;
+}
+
+.om-error-indicator-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.om-error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  width: 100%;
+}
+
+.om-error-actions .btn {
+  border-radius: 10px;
+  font-size: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.om-error-actions .btn:hover {
+  transform: translateY(-1px);
+}
+
+.om-error-details-container {
+  width: 100%;
+}
+
+.om-error-technical-box {
+  background-color: #f1f5f9;
+  border-color: #e2e8f0;
+  color: #334155;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  border-radius: 8px;
+}
+
+.om-error-footer {
+  margin-top: 36px;
+  padding-top: 20px;
+  border-top: 1px solid #f1f5f9;
+  font-size: 0.76rem;
+  color: #94a3b8;
+  letter-spacing: 0.3px;
+  width: 100%;
+}
+
