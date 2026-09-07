@@ -1,6 +1,7 @@
 import { getDB } from "../config/db.js";
 import { ObjectId } from "mongodb";
 import bcrypt from "bcryptjs";
+import { idFilter } from "../utils/messHelper.js";
 
 /**
  * Get profile of currently logged-in user without password hash.
@@ -11,7 +12,7 @@ export const getMyProfile = async (req, res) => {
     const user = await db
       .collection("users")
       .findOne(
-        { _id: new ObjectId(req.user.id) },
+        { _id: idFilter(req.user.id) },
         { projection: { password: 0 } },
       );
 
@@ -50,7 +51,7 @@ export const updateMyProfile = async (req, res) => {
 
     const result = await db
       .collection("users")
-      .updateOne({ _id: new ObjectId(req.user.id) }, { $set: updateData });
+      .updateOne({ _id: idFilter(req.user.id) }, { $set: updateData });
 
     if (result.matchedCount === 0) {
       return res.status(404).json({ message: "User not found" });
@@ -59,13 +60,14 @@ export const updateMyProfile = async (req, res) => {
     const updatedUser = await db
       .collection("users")
       .findOne(
-        { _id: new ObjectId(req.user.id) },
+        { _id: idFilter(req.user.id) },
         { projection: { password: 0 } },
       );
 
-    res
-      .status(200)
-      .json({ message: "Profile updated successfully", user: updatedUser });
+    res.status(200).json({
+      message: "Profile updated successfully",
+      user: updatedUser,
+    });
   } catch (error) {
     console.error("UPDATE PROFILE ERROR:", error);
     res.status(500).json({ message: "Server error", error: error.message });
@@ -78,20 +80,22 @@ export const updateMyProfile = async (req, res) => {
 export const changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body || {};
+
     if (!currentPassword || !newPassword) {
       return res
         .status(400)
-        .json({ message: "Current password and new password are required" });
+        .json({ message: "Current and new password are required" });
     }
-    if (newPassword.length < 6) {
+
+    if (String(newPassword).length < 8) {
       return res
         .status(400)
-        .json({ message: "New password must be at least 6 characters" });
+        .json({ message: "New password must be at least 8 characters" });
     }
 
     const db = getDB();
     const users = db.collection("users");
-    const user = await users.findOne({ _id: new ObjectId(req.user.id) });
+    const user = await users.findOne({ _id: idFilter(req.user.id) });
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -104,7 +108,7 @@ export const changePassword = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     await users.updateOne(
-      { _id: new ObjectId(req.user.id) },
+      { _id: idFilter(req.user.id) },
       { $set: { password: hashedPassword, updatedAt: new Date() } },
     );
 
@@ -123,7 +127,7 @@ export const getMyBookings = async (req, res) => {
     const db = getDB();
     const bookings = await db
       .collection("bookings")
-      .find({ userId: new ObjectId(req.user.id) })
+      .find({ userId: idFilter(req.user.id) })
       .sort({ createdAt: -1 })
       .toArray();
 
@@ -144,7 +148,7 @@ export const getUpcomingBookings = async (req, res) => {
     const bookings = await db
       .collection("bookings")
       .find({
-        userId: new ObjectId(req.user.id),
+        userId: idFilter(req.user.id),
         checkOut: { $gte: now },
         status: {
           $nin: [
@@ -172,7 +176,7 @@ export const getUpcomingBookings = async (req, res) => {
 export const getMyBookingById = async (req, res) => {
   try {
     const { bookingId } = req.params;
-    if (!ObjectId.isValid(bookingId)) {
+    if (!bookingId) {
       return res.status(400).json({ message: "Invalid Booking ID" });
     }
 
@@ -180,8 +184,8 @@ export const getMyBookingById = async (req, res) => {
     const booking = await db
       .collection("bookings")
       .findOne({
-        _id: new ObjectId(bookingId),
-        userId: new ObjectId(req.user.id),
+        _id: idFilter(bookingId),
+        userId: idFilter(req.user.id),
       });
 
     if (!booking) {
@@ -203,15 +207,15 @@ export const cancelBooking = async (req, res) => {
     const { bookingId } = req.params;
     const reason = (req.body?.reason || req.body?.cancellationReason || "").trim();
 
-    if (!ObjectId.isValid(bookingId)) {
+    if (!bookingId) {
       return res.status(400).json({ message: "Invalid Booking ID" });
     }
 
     const db = getDB();
     const bookings = db.collection("bookings");
     const booking = await bookings.findOne({
-      _id: new ObjectId(bookingId),
-      userId: new ObjectId(req.user.id),
+      _id: idFilter(bookingId),
+      userId: idFilter(req.user.id),
     });
 
     if (!booking) {
@@ -239,7 +243,7 @@ export const cancelBooking = async (req, res) => {
 
     const now = new Date();
     await bookings.updateOne(
-      { _id: new ObjectId(bookingId) },
+      { _id: idFilter(bookingId) },
       {
         $set: {
           status: "USER_CANCELLED",
@@ -256,7 +260,7 @@ export const cancelBooking = async (req, res) => {
     await db
       .collection("room_allocations")
       .updateMany(
-        { bookingId: new ObjectId(bookingId), status: "ACTIVE" },
+        { bookingId: idFilter(bookingId), status: "ACTIVE" },
         { $set: { status: "CANCELLED", updatedAt: now } },
       );
 

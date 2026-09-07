@@ -3,7 +3,7 @@
 
 import { ObjectId } from "mongodb";
 import { getDB } from "../config/db.js";
-import { messIdFilter, resolveUserMessId } from "../utils/messHelper.js";
+import { idFilter, messIdFilter, resolveUserMessId } from "../utils/messHelper.js";
 
 // Format a number safely to 2 decimal places
 const money = (n) => Number(Number(n || 0).toFixed(2));
@@ -42,10 +42,10 @@ const yearBounds = (year) => {
  */
 const getStaff = async (req) => {
   const db = getDB();
-  if (!ObjectId.isValid(req.user?.id)) return null;
+  if (!req.user?.id) return null;
   return db.collection("users").findOne(
     {
-      _id: new ObjectId(req.user.id),
+      _id: idFilter(req.user.id),
       role: { $in: ["MESS_MANAGER", "PMC", "MESS_SECRETARY"] },
     },
     { projection: { password: 0 } },

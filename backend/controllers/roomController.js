@@ -1,7 +1,7 @@
 import { ObjectId } from "mongodb";
 import { getDB } from "../config/db.js";
 import { DEFAULT_ROOM_RATES, DEFAULT_MEAL_RATES } from "../models/Room.js";
-import { messIdFilter, resolveUserMessId } from "../utils/messHelper.js";
+import { idFilter, messIdFilter, resolveUserMessId } from "../utils/messHelper.js";
 import {
   addDays,
   day,
@@ -18,7 +18,7 @@ import {
 const getUserMess = async (req) =>
   getDB()
     .collection("users")
-    .findOne({ _id: new ObjectId(req.user.id) });
+    .findOne({ _id: idFilter(req.user.id) });
 
 /**
  * Build map of unavailable room-date sets based on active bookings, allocations, and room blocks.

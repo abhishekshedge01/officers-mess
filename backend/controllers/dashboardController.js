@@ -1,6 +1,6 @@
 import { ObjectId } from "mongodb";
 import { getDB } from "../config/db.js";
-import { messIdFilter, resolveUserMessId } from "../utils/messHelper.js";
+import { idFilter, messIdFilter, resolveUserMessId } from "../utils/messHelper.js";
 
 /**
  * Retrieve role-based statistics and metrics for the dashboard.
@@ -46,18 +46,18 @@ export const getDashboard = async (req, res) => {
       });
     }
 
-    if (!ObjectId.isValid(req.user.id)) {
+    if (!req.user?.id) {
       return res.status(400).json({ message: "Invalid user ID" });
     }
 
-    const currentUser = await users.findOne({ _id: new ObjectId(req.user.id) });
+    const currentUser = await users.findOne({ _id: idFilter(req.user.id) });
     if (!currentUser) {
       return res.status(404).json({ message: "User not found" });
     }
 
     // Officer / User Dashboard
     if (req.user.role === "USER") {
-      const userId = new ObjectId(req.user.id);
+      const userId = idFilter(req.user.id);
       const [
         totalBookings,
         pendingBookings,

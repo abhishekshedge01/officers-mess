@@ -1,6 +1,22 @@
 import { ObjectId } from "mongodb";
 
 /**
+ * Returns a MongoDB query filter matching _id either as a String or an ObjectId,
+ * guaranteeing compatibility regardless of whether the collection uses string IDs or ObjectIds.
+ *
+ * @param {string|ObjectId} id
+ * @returns {Object} { $in: [...] } query clause
+ */
+export const idFilter = (id) => {
+  if (!id) return { $in: [] };
+  const str = String(id);
+  if (ObjectId.isValid(str)) {
+    return { $in: [str, new ObjectId(str)] };
+  }
+  return str;
+};
+
+/**
  * Returns a MongoDB query filter matching messId either as a String or an ObjectId,
  * guaranteeing compatibility with both schema conventions.
  *

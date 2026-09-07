@@ -4,7 +4,7 @@
 
 import { ObjectId } from "mongodb";
 import { getDB } from "../config/db.js";
-import { messIdFilter, resolveUserMessId } from "../utils/messHelper.js";
+import { idFilter, messIdFilter, resolveUserMessId } from "../utils/messHelper.js";
 
 /**
  * Add an extra line-item charge (e.g. food, laundry) to a currently CHECKED_IN booking.
@@ -44,7 +44,7 @@ export const addBookingCharge = async (req, res) => {
 
     // Verify staff user and permissions
     const staff = await db.collection("users").findOne({
-      _id: new ObjectId(req.user.id),
+      _id: idFilter(req.user.id),
     });
 
     if (!staff) {
@@ -133,7 +133,7 @@ export const getBookingCharges = async (req, res) => {
 
     const db = getDB();
     const staff = await db.collection("users").findOne({
-      _id: new ObjectId(req.user.id),
+      _id: idFilter(req.user.id),
     });
 
     if (!staff) {
@@ -145,8 +145,8 @@ export const getBookingCharges = async (req, res) => {
     // Regular users can only see their own booking's charges
     if (staff.role === "USER") {
       booking = await db.collection("bookings").findOne({
-        _id: new ObjectId(bookingId),
-        userId: new ObjectId(req.user.id),
+        _id: idFilter(bookingId),
+        userId: idFilter(req.user.id),
       });
     } else {
       // Staff members must belong to a mess to query charges

@@ -5,16 +5,16 @@ import { withFinalStay } from "../utils/finalStay.js";
 import { allocateApprovedBooking } from "./allocationController.js";
 import { markExpiredApprovedBookingsAsNoShow } from "../utils/stayDates.js";
 import { broadcastMessEvent } from "../utils/notificationHelper.js";
-import { messIdFilter, resolveUserMessId } from "../utils/messHelper.js";
+import { idFilter, messIdFilter, resolveUserMessId } from "../utils/messHelper.js";
 
 /**
  * Retrieve authenticated MESS_MANAGER user document.
  */
 const getManager = async (req) => {
   const db = getDB();
-  if (!req.user?.id || !ObjectId.isValid(req.user.id)) return null;
+  if (!req.user?.id) return null;
   const user = await db.collection("users").findOne({
-    _id: new ObjectId(req.user.id),
+    _id: idFilter(req.user.id),
     role: "MESS_MANAGER",
   });
   if (user) {
