@@ -607,12 +607,14 @@ export const createPaymentOrder = async (req, res) => {
     if (!ObjectId.isValid(billId))
       return res.status(400).json({ message: "Invalid bill ID" });
 
-    const keyId = process.env.RAZORPAY_KEY_ID;
-    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    const keyId =
+      process.env.RAZORPAY_KEY_ID || "rzp_test_TXS5Yma0OmV7Zd";
+    const keySecret =
+      process.env.RAZORPAY_KEY_SECRET || "Pza2YntmJIIR0GJwa9E6grtI";
     if (!keyId || !keySecret) {
       return res.status(503).json({
         message:
-          "Razorpay is not configured. Add RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET to backend/.env.",
+          "Razorpay is not configured. Add RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET to environment variables.",
       });
     }
 
@@ -701,7 +703,10 @@ export const verifyPayment = async (req, res) => {
     if (!ObjectId.isValid(billId))
       return res.status(400).json({ message: "Invalid bill ID" });
 
-    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    const keyId =
+      process.env.RAZORPAY_KEY_ID || "rzp_test_TXS5Yma0OmV7Zd";
+    const keySecret =
+      process.env.RAZORPAY_KEY_SECRET || "Pza2YntmJIIR0GJwa9E6grtI";
     if (!keySecret)
       return res.status(503).json({ message: "Razorpay secret is not configured on the server" });
 
@@ -736,7 +741,6 @@ export const verifyPayment = async (req, res) => {
     }
 
     // Confirm the payment status with Razorpay before marking the bill as paid.
-    const keyId = process.env.RAZORPAY_KEY_ID;
     const auth = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
     const paymentResponse = await fetch(
       `https://api.razorpay.com/v1/payments/${encodeURIComponent(razorpayPaymentId)}`,
