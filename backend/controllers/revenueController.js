@@ -54,12 +54,23 @@ const getStaff = async (req) => {
 
 /**
  * Base MongoDB query filter for paid bills within a time range.
+ * Supports paidAt stored as BSON Date or ISO String.
  */
-const baseFilter = (messId, start, end) => ({
-  messId,
-  paymentStatus: "PAID",
-  paidAt: { $gte: start, $lt: end },
-});
+const baseFilter = (messId, start, end) => {
+  const startStr = start instanceof Date ? start.toISOString() : String(start);
+  const endStr = end instanceof Date ? end.toISOString() : String(end);
+  const startObj = start instanceof Date ? start : new Date(start);
+  const endObj = end instanceof Date ? end : new Date(end);
+
+  return {
+    messId,
+    paymentStatus: "PAID",
+    $or: [
+      { paidAt: { $gte: startObj, $lt: endObj } },
+      { paidAt: { $gte: startStr, $lt: endStr } },
+    ],
+  };
+};
 
 /**
  * Get aggregated revenue metrics, category breakdowns, and transaction lists for a mess.

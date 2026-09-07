@@ -153,7 +153,15 @@ export const getDashboard = async (req, res) => {
               $match: {
                 messId: mIdFilter,
                 paymentStatus: "PAID",
-                paidAt: { $gte: monthStart, $lt: nextMonth },
+                $or: [
+                  { paidAt: { $gte: monthStart, $lt: nextMonth } },
+                  {
+                    paidAt: {
+                      $gte: monthStart.toISOString(),
+                      $lt: nextMonth.toISOString(),
+                    },
+                  },
+                ],
               },
             },
             { $group: { _id: null, total: { $sum: "$totalAmount" } } },
@@ -166,7 +174,15 @@ export const getDashboard = async (req, res) => {
               $match: {
                 messId: mIdFilter,
                 paymentStatus: "PAID",
-                paidAt: { $gte: yearStart, $lt: nextYear },
+                $or: [
+                  { paidAt: { $gte: yearStart, $lt: nextYear } },
+                  {
+                    paidAt: {
+                      $gte: yearStart.toISOString(),
+                      $lt: nextYear.toISOString(),
+                    },
+                  },
+                ],
               },
             },
             { $group: { _id: null, total: { $sum: "$totalAmount" } } },
