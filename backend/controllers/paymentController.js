@@ -2,6 +2,7 @@ import { ObjectId } from "mongodb";
 import crypto from "crypto";
 import { getDB } from "../config/db.js";
 import { broadcastMessEvent } from "../utils/notificationHelper.js";
+import { idFilter, messIdFilter } from "../utils/messHelper.js";
 
 const money = (value) => Number(value || 0).toFixed(2);
 const safeDate = (value) =>
@@ -32,8 +33,8 @@ const nextDocumentNumber = async (db, field, prefix) => {
  */
 const getBillForUser = async (db, billId, userId) =>
   db.collection("bills").findOne({
-    _id: new ObjectId(billId),
-    userId: new ObjectId(userId),
+    _id: idFilter(billId),
+    userId: idFilter(userId),
   });
 
 const pdfEscape = (value) =>
@@ -105,12 +106,12 @@ const rect = (commands, x, y, w, h, width = 1) => {
 
 const fetchReceiptContext = async (db, bill) => {
   const mess = bill.messId
-    ? await db.collection("messes").findOne({ _id: new ObjectId(bill.messId) })
+    ? await db.collection("messes").findOne({ _id: idFilter(bill.messId) })
     : null;
 
   const secretary = mess?.secretaryId
     ? await db.collection("users").findOne({
-        _id: new ObjectId(mess.secretaryId),
+        _id: idFilter(mess.secretaryId),
         role: "MESS_SECRETARY",
       })
     : null;
@@ -118,7 +119,7 @@ const fetchReceiptContext = async (db, bill) => {
   const pmc = mess?.pmcId
     ? await db
         .collection("users")
-        .findOne({ _id: new ObjectId(mess.pmcId), role: "PMC" })
+        .findOne({ _id: idFilter(mess.pmcId), role: "PMC" })
     : null;
 
   return { mess, secretary, pmc };
@@ -554,19 +555,19 @@ export const getBill = async (req, res) => {
     const db = getDB();
     const bill = await db
       .collection("bills")
-      .findOne({ _id: new ObjectId(billId) });
+      .findOne({ _id: idFilter(billId) });
     if (!bill) return res.status(404).json({ message: "Bill not found" });
 
     if (
       req.user.role === "USER" &&
-      (!bill.userId || bill.userId.toString() !== req.user.id)
+      (!bill.userId || String(bill.userId) !== String(req.user.id))
     ) {
       return res.status(403).json({ message: "Access denied" });
     }
     if (["MESS_MANAGER", "MESS_SECRETARY", "PMC"].includes(req.user.role)) {
       const user = await db
         .collection("users")
-        .findOne({ _id: new ObjectId(req.user.id) });
+        .findOne({ _id: idFilter(req.user.id) });
       if (user?.messId?.toString() !== bill.messId?.toString()) {
         return res.status(403).json({ message: "Access denied" });
       }
@@ -586,7 +587,7 @@ export const getMyBills = async (req, res) => {
     const db = getDB();
     const bills = await db
       .collection("bills")
-      .find({ userId: new ObjectId(req.user.id) })
+      .find({ userId: idFilter(req.user.id) })
       .sort({ createdAt: -1 })
       .toArray();
     res.json(bills);
@@ -655,7 +656,7 @@ export const createPaymentOrder = async (req, res) => {
     }
 
     await db.collection("bills").updateOne(
-      { _id: bill._id, userId: new ObjectId(req.user.id), paymentStatus: { $ne: "PAID" } },
+      { _id: bill._id, paymentStatus: { $ne: "PAID" } },
       {
         $set: {
           razorpayOrderId: order.id,
@@ -769,7 +770,7 @@ export const verifyPayment = async (req, res) => {
     const updated = await db.collection("bills").findOneAndUpdate(
       {
         _id: bill._id,
-        userId: new ObjectId(req.user.id),
+        userId: idFilter(req.user.id),
         paymentStatus: { $ne: "PAID" },
       },
       {
@@ -802,18 +803,21 @@ export const verifyPayment = async (req, res) => {
           billId: bill._id,
           userId: bill.userId,
           messId: bill.messId,
-          orderId: bill.razorpayOrderId,
+          orderId: razorpayOrderId,
           paymentId: razorpayPaymentId,
           amount: Number(bill.totalAmount || 0),
           currency: "INR",
           status: "PAID",
           paymentMode: payment.method === "upi" ? "RAZORPAY_UPI" : "RAZORPAY",
-          razorpayMethod: payment.method || null,
-          razorpayVpa: payment.vpa || null,
-          gatewayFee: Number(payment.fee || 0) / 100,
-          gatewayTax: Number(payment.tax || 0) / 100,
-          netAmount: Number(bill.totalAmount || 0) - Number(payment.fee || 0) / 100,
+          netAmount:
+            Number(bill.totalAmount || 0) - Number(payment.fee || 0) / 100,
           paidAt: now,
+          meta: {
+            method: payment.method,
+            vpa: payment.vpa,
+            fee: payment.fee,
+            tax: payment.tax,
+          },
         },
         $setOnInsert: { createdAt: bill.createdAt || now },
       },
@@ -824,7 +828,7 @@ export const verifyPayment = async (req, res) => {
       messId: bill.messId,
       userId: bill.userId,
       type: "PAYMENT_SUCCESS",
-      title: "Payment received",
+      title: "Payment successful",
       billId: bill._id,
       bookingId: bill.bookingId,
       userMessage: `Payment of ₹${money(bill.totalAmount)} was completed successfully. Your paid invoice and receipts are available.`,
@@ -891,7 +895,7 @@ export const downloadReceipt = (req, res) => sendPdf(req, res, "receipt");
 export const downloadMealReceipt = (req, res) => sendPdf(req, res, "meal_receipt");
 
 /**
- * Direct bill settlement for offline / demonstration / mess desk payment.
+ * Demo settlement endpoint for offline/cash/counter payment verification.
  * Ensures the invoice, stay receipt and meal receipt are generated and the user gets verified receipts.
  */
 export const settleDemoPayment = async (req, res) => {
@@ -920,7 +924,7 @@ export const settleDemoPayment = async (req, res) => {
     const updated = await db.collection("bills").findOneAndUpdate(
       {
         _id: bill._id,
-        userId: new ObjectId(req.user.id),
+        userId: idFilter(req.user.id),
         paymentStatus: { $ne: "PAID" },
       },
       {

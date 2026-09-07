@@ -3,6 +3,7 @@
 
 import { ObjectId } from "mongodb";
 import { getDB } from "../config/db.js";
+import { idFilter } from "../utils/messHelper.js";
 
 /**
  * Fetch all notifications for the authenticated user, sorted by most recent first.
@@ -12,7 +13,7 @@ export const getMyNotifications = async (req, res) => {
     const db = getDB();
     const notifications = await db
       .collection("notifications")
-      .find({ userId: new ObjectId(req.user.id) })
+      .find({ userId: idFilter(req.user.id) })
       .sort({ createdAt: -1 })
       .toArray();
 
@@ -30,7 +31,7 @@ export const getUnreadNotificationCount = async (req, res) => {
   try {
     const db = getDB();
     const count = await db.collection("notifications").countDocuments({
-      userId: new ObjectId(req.user.id),
+      userId: idFilter(req.user.id),
       isRead: { $ne: true },
     });
 
@@ -54,8 +55,8 @@ export const markNotificationRead = async (req, res) => {
     const db = getDB();
     const result = await db.collection("notifications").updateOne(
       {
-        _id: new ObjectId(notificationId),
-        userId: new ObjectId(req.user.id),
+        _id: idFilter(notificationId),
+        userId: idFilter(req.user.id),
       },
       {
         $set: {
@@ -84,7 +85,7 @@ export const markAllNotificationsRead = async (req, res) => {
     const db = getDB();
     const result = await db.collection("notifications").updateMany(
       {
-        userId: new ObjectId(req.user.id),
+        userId: idFilter(req.user.id),
         isRead: { $ne: true },
       },
       {

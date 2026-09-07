@@ -5,6 +5,7 @@
 //    Mess Manager, and the guest (User) whenever an action is performed.
 
 import { ObjectId } from "mongodb";
+import { idFilter } from "./messHelper.js";
 
 /**
  * Dispatch a notification to a specific user if a duplicate does not already exist.
@@ -14,19 +15,19 @@ export const sendNotification = async (
   db,
   { userId, type, title, message, bookingId = null, billId = null },
 ) => {
-  if (!userId || !ObjectId.isValid(userId)) return null;
+  if (!userId) return null;
 
-  const targetUserId = new ObjectId(userId);
+  const targetUserId = String(userId);
   const filter = {
-    userId: targetUserId,
+    userId: idFilter(targetUserId),
     type,
   };
 
-  if (bookingId && ObjectId.isValid(bookingId)) {
-    filter.bookingId = new ObjectId(bookingId);
+  if (bookingId) {
+    filter.bookingId = idFilter(bookingId);
   }
-  if (billId && ObjectId.isValid(billId)) {
-    filter.billId = new ObjectId(billId);
+  if (billId) {
+    filter.billId = idFilter(billId);
   }
 
   // Deduplication check: do not send if identical notification already exists
@@ -45,11 +46,11 @@ export const sendNotification = async (
     createdAt: new Date(),
   };
 
-  if (bookingId && ObjectId.isValid(bookingId)) {
-    doc.bookingId = new ObjectId(bookingId);
+  if (bookingId) {
+    doc.bookingId = String(bookingId);
   }
-  if (billId && ObjectId.isValid(billId)) {
-    doc.billId = new ObjectId(billId);
+  if (billId) {
+    doc.billId = String(billId);
   }
 
   const result = await db.collection("notifications").insertOne(doc);
@@ -89,21 +90,21 @@ export const broadcastMessEvent = async (
     notifyUser = true,
   },
 ) => {
-  if (!messId || !ObjectId.isValid(messId)) return;
+  if (!messId) return;
 
   const mess = await db
     .collection("messes")
-    .findOne({ _id: new ObjectId(messId) });
+    .findOne({ _id: idFilter(messId) });
   if (!mess) return;
 
   const staffUserIds = new Set();
-  if (mess.managerId && ObjectId.isValid(mess.managerId)) {
+  if (mess.managerId) {
     staffUserIds.add(String(mess.managerId));
   }
-  if (mess.secretaryId && ObjectId.isValid(mess.secretaryId)) {
+  if (mess.secretaryId) {
     staffUserIds.add(String(mess.secretaryId));
   }
-  if (mess.pmcId && ObjectId.isValid(mess.pmcId)) {
+  if (mess.pmcId) {
     staffUserIds.add(String(mess.pmcId));
   }
 
@@ -124,10 +125,10 @@ export const broadcastMessEvent = async (
   }
 
   // Notify guest user if applicable
-  if (notifyUser && userId && ObjectId.isValid(userId)) {
+  if (notifyUser && userId) {
     promises.push(
       sendNotification(db, {
-        userId,
+        userId: String(userId),
         type,
         title,
         message: userMessage || staffMessage,
