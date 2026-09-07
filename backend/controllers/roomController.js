@@ -1,6 +1,7 @@
 import { ObjectId } from "mongodb";
 import { getDB } from "../config/db.js";
 import { DEFAULT_ROOM_RATES, DEFAULT_MEAL_RATES } from "../models/Room.js";
+import { messIdFilter, resolveUserMessId } from "../utils/messHelper.js";
 import {
   addDays,
   day,
@@ -25,16 +26,18 @@ const getUserMess = async (req) =>
 const buildUnavailable = async (db, messId, checkInDate, checkOutDate) => {
   await markExpiredApprovedBookingsAsNoShow(db, messId);
 
+  const mFilter = messIdFilter(messId);
+
   const rooms = await db
     .collection("rooms")
-    .find({ messId, status: "ACTIVE" })
+    .find({ messId: mFilter, status: "ACTIVE" })
     .sort({ roomNumber: 1 })
     .toArray();
 
   const bookings = await db
     .collection("bookings")
     .find({
-      messId,
+      messId: mFilter,
       status: {
         $in: [
           "PENDING_MANAGER",
@@ -53,7 +56,7 @@ const buildUnavailable = async (db, messId, checkInDate, checkOutDate) => {
   const allocations = await db
     .collection("room_allocations")
     .find({
-      messId,
+      messId: mFilter,
       status: "ACTIVE",
       from: { $lt: checkOutDate },
       to: { $gt: checkInDate },
@@ -63,7 +66,7 @@ const buildUnavailable = async (db, messId, checkInDate, checkOutDate) => {
   const blocks = await db
     .collection("room_blocks")
     .find({
-      messId,
+      messId: mFilter,
       status: "ACTIVE",
       from: { $lt: checkOutDate },
       to: { $gt: checkInDate },
@@ -231,7 +234,8 @@ export const getRooms = async (req, res) => {
     const db = getDB();
     const u = await getUserMess(req);
 
-    if (!u?.messId) {
+    const rawMessId = await resolveUserMessId(db, u);
+    if (!rawMessId) {
       return res
         .status(400)
         .json({ message: "Manager is not assigned to any mess" });
@@ -239,7 +243,7 @@ export const getRooms = async (req, res) => {
 
     const rooms = await db
       .collection("rooms")
-      .find({ messId: new ObjectId(u.messId) })
+      .find({ messId: messIdFilter(rawMessId) })
       .sort({ roomNumber: 1 })
       .toArray();
 
@@ -264,14 +268,15 @@ export const updateRoom = async (req, res) => {
     const db = getDB();
     const u = await getUserMess(req);
 
-    if (!u?.messId || !ObjectId.isValid(req.params.roomId)) {
+    const rawMessId = await resolveUserMessId(db, u);
+    if (!rawMessId || !ObjectId.isValid(req.params.roomId)) {
       return res.status(400).json({ message: "Invalid room" });
     }
 
     const id = new ObjectId(req.params.roomId);
     const room = await db
       .collection("rooms")
-      .findOne({ _id: id, messId: new ObjectId(u.messId) });
+      .findOne({ _id: id, messId: messIdFilter(rawMessId) });
 
     if (!room) {
       return res.status(404).json({ message: "Room not found" });
@@ -462,9 +467,11 @@ export const getOccupancy = async (req, res) => {
     let messId = u?.messId;
     if (req.user.role === "ADMIN" && req.query.messId) {
       messId = req.query.messId;
+    } else {
+      messId = await resolveUserMessId(db, u);
     }
 
-    if (!messId || !ObjectId.isValid(messId)) {
+    if (!messId) {
       return res.status(400).json({ message: "No mess assigned" });
     }
 
@@ -479,20 +486,20 @@ export const getOccupancy = async (req, res) => {
         Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth() + 1, 1),
       ),
     );
-    const messObjectId = new ObjectId(messId);
+    const mFilter = messIdFilter(messId);
 
-    await markExpiredApprovedBookingsAsNoShow(db, messObjectId);
+    await markExpiredApprovedBookingsAsNoShow(db, messId);
 
     const rooms = await db
       .collection("rooms")
-      .find({ messId: messObjectId, status: "ACTIVE" })
+      .find({ messId: mFilter, status: "ACTIVE" })
       .sort({ roomNumber: 1 })
       .toArray();
 
     const bookings = await db
       .collection("bookings")
       .find({
-        messId: messObjectId,
+        messId: mFilter,
         status: { $in: ["APPROVED", "CHECKED_IN", "CHECKOUT_REQUESTED"] },
         checkInDate: { $lt: end },
         checkOutDate: { $gt: start },
@@ -518,7 +525,7 @@ export const getOccupancy = async (req, res) => {
     const allocations = await db
       .collection("room_allocations")
       .find({
-        messId: messObjectId,
+        messId: mFilter,
         status: "ACTIVE",
         from: { $lt: end },
         to: { $gt: start },
@@ -528,7 +535,7 @@ export const getOccupancy = async (req, res) => {
     const blocks = await db
       .collection("room_blocks")
       .find({
-        messId: messObjectId,
+        messId: mFilter,
         status: "ACTIVE",
         from: { $lt: end },
         to: { $gt: start },

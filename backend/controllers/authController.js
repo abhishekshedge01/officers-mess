@@ -116,10 +116,10 @@ export const login = async (req, res) => {
       serviceId: user.serviceId || "",
     };
 
-    // Short-lived Access Token (15 minutes for secrecy)
-    const ACCESS_TOKEN_EXPIRY = "15m";
+    // Access Token (7 days for smooth seamless session)
+    const ACCESS_TOKEN_EXPIRY = "7d";
     const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || `${process.env.JWT_SECRET}_refresh`;
-    const REFRESH_TOKEN_EXPIRY = "7d";
+    const REFRESH_TOKEN_EXPIRY = "30d";
 
     const accessToken = jwt.sign(payload, process.env.JWT_SECRET, {
       expiresIn: ACCESS_TOKEN_EXPIRY,
@@ -132,10 +132,10 @@ export const login = async (req, res) => {
     );
 
     const now = new Date();
-    // 15 minutes session expiry for the access token
-    const accessExpiresAt = new Date(now.getTime() + 15 * 60 * 1000);
-    // 7 days expiry for the refresh token
-    const refreshExpiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    // 7 days session expiry for the access token
+    const accessExpiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    // 30 days expiry for the refresh token
+    const refreshExpiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
     // Compute SHA-256 hash of tokens for cryptographic storage
     const accessTokenHash = crypto.createHash("sha256").update(accessToken).digest("hex");
@@ -225,6 +225,37 @@ export const refreshToken = async (req, res) => {
     });
 
     if (!storedTokenDoc) {
+      // Check if it was recently rotated within a 60-second grace period (concurrent requests race condition)
+      const recentlyRotated = await db.collection("revoked_tokens").findOne({
+        token: incomingRefreshToken,
+        reason: "ROTATED_REFRESH",
+        revokedAt: { $gte: new Date(Date.now() - 60 * 1000) },
+      });
+
+      if (recentlyRotated) {
+        // Find user and issue a valid access token without penalty
+        const graceUser = await db.collection("users").findOne({ _id: recentlyRotated.userId });
+        if (graceUser && (!graceUser.accountStatus || graceUser.accountStatus === "ACTIVE")) {
+          const payload = {
+            id: graceUser._id.toString(),
+            role: graceUser.role,
+            rank: graceUser.rank || "",
+            name: graceUser.name || "",
+            email: graceUser.email || "",
+            serviceId: graceUser.serviceId || "",
+          };
+          const graceAccessToken = jwt.sign(payload, process.env.JWT_SECRET, {
+            expiresIn: "7d",
+          });
+          return res.status(200).json({
+            message: "Token refreshed successfully",
+            token: graceAccessToken,
+            accessToken: graceAccessToken,
+            refreshToken: incomingRefreshToken,
+          });
+        }
+      }
+
       // Possible token reuse / theft detection: Revoke all refresh tokens for this user for security
       await db.collection("refresh_tokens").deleteMany({ userId: decoded.id });
       await db.collection("revoked_tokens").insertOne({
@@ -261,7 +292,7 @@ export const refreshToken = async (req, res) => {
       expiresAt: storedTokenDoc.expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     });
 
-    // 6. Generate NEW Access Token and rotated NEW Refresh Token
+    // 6. Generate NEW Access Token (7 days) and rotated NEW Refresh Token (30 days)
     const payload = {
       id: user._id.toString(),
       role: user.role,
@@ -272,18 +303,18 @@ export const refreshToken = async (req, res) => {
     };
 
     const newAccessToken = jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn: "15m",
+      expiresIn: "7d",
     });
 
     const newRefreshToken = jwt.sign(
       { id: user._id.toString(), type: "REFRESH" },
       REFRESH_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: "30d" }
     );
 
     const now = new Date();
-    const accessExpiresAt = new Date(now.getTime() + 15 * 60 * 1000);
-    const refreshExpiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const accessExpiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const refreshExpiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
     // Compute SHA-256 hash of tokens for cryptographic storage
     const newAccessTokenHash = crypto.createHash("sha256").update(newAccessToken).digest("hex");

@@ -1,6 +1,7 @@
 import { ObjectId } from "mongodb";
 import { getDB } from "../config/db.js";
 import { stayDates as dates } from "../utils/stayDates.js";
+import { messIdFilter } from "../utils/messHelper.js";
 
 const CATEGORY_RATES = {
   TD_OFFICER: 2800,
@@ -30,7 +31,7 @@ export const allocateApprovedBooking = async (db, booking, manager) => {
     throw error;
   }
 
-  const messId = new ObjectId(booking.messId);
+  const mFilter = messIdFilter(booking.messId);
   const guestCount = Number(
     booking.numberOfGuests || booking.stayMembers?.length || 1,
   );
@@ -38,7 +39,7 @@ export const allocateApprovedBooking = async (db, booking, manager) => {
   // Smallest suitable room capacity first, lowest roomNumber as deterministic tie-breaker
   const rooms = await db
     .collection("rooms")
-    .find({ messId, status: "ACTIVE", capacity: { $gte: guestCount } })
+    .find({ messId: mFilter, status: "ACTIVE", capacity: { $gte: guestCount } })
     .sort({ capacity: 1, roomNumber: 1 })
     .toArray();
 
@@ -53,7 +54,7 @@ export const allocateApprovedBooking = async (db, booking, manager) => {
   const existing = await db
     .collection("room_allocations")
     .find({
-      messId,
+      messId: mFilter,
       status: "ACTIVE",
       from: { $lt: booking.checkOutDate },
       to: { $gt: booking.checkInDate },

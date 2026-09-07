@@ -91,7 +91,8 @@ export const markExpiredApprovedBookingsAsNoShow = async (db, messId) => {
   const today = todayIndia();
   const query = { status: "APPROVED" };
   if (messId) {
-    query.messId = ObjectId.isValid(messId) ? new ObjectId(messId) : messId;
+    const str = String(messId);
+    query.messId = ObjectId.isValid(str) ? { $in: [str, new ObjectId(str)] } : str;
   }
 
   const bookings = await db

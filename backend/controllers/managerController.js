@@ -5,6 +5,7 @@ import { withFinalStay } from "../utils/finalStay.js";
 import { allocateApprovedBooking } from "./allocationController.js";
 import { markExpiredApprovedBookingsAsNoShow } from "../utils/stayDates.js";
 import { broadcastMessEvent } from "../utils/notificationHelper.js";
+import { messIdFilter, resolveUserMessId } from "../utils/messHelper.js";
 
 /**
  * Retrieve authenticated MESS_MANAGER user document.
@@ -12,10 +13,14 @@ import { broadcastMessEvent } from "../utils/notificationHelper.js";
 const getManager = async (req) => {
   const db = getDB();
   if (!req.user?.id || !ObjectId.isValid(req.user.id)) return null;
-  return await db.collection("users").findOne({
+  const user = await db.collection("users").findOne({
     _id: new ObjectId(req.user.id),
     role: "MESS_MANAGER",
   });
+  if (user) {
+    await resolveUserMessId(db, user);
+  }
+  return user;
 };
 
 /**
@@ -199,7 +204,7 @@ export const getManagerBookings = async (req, res) => {
     const db = getDB();
     await markExpiredApprovedBookingsAsNoShow(db, manager.messId);
 
-    const filter = { messId: new ObjectId(manager.messId) };
+    const filter = { messId: messIdFilter(manager.messId) };
     if (req.query.status) {
       filter.status = req.query.status;
     }
@@ -238,7 +243,7 @@ export const approveBooking = async (req, res) => {
     const db = getDB();
     const booking = await db.collection("bookings").findOne({
       _id: new ObjectId(bookingId),
-      messId: new ObjectId(manager.messId),
+      messId: messIdFilter(manager.messId),
       status: "PENDING_MANAGER",
     });
 
@@ -309,7 +314,7 @@ export const rejectBooking = async (req, res) => {
     const db = getDB();
     const booking = await db.collection("bookings").findOne({
       _id: new ObjectId(bookingId),
-      messId: new ObjectId(manager.messId),
+      messId: messIdFilter(manager.messId),
       status: "PENDING_MANAGER",
     });
 
@@ -378,7 +383,7 @@ export const getBookingById = async (req, res) => {
     const db = getDB();
     const booking = await db.collection("bookings").findOne({
       _id: new ObjectId(bookingId),
-      messId: new ObjectId(manager.messId),
+      messId: messIdFilter(manager.messId),
     });
 
     if (!booking) {
@@ -413,7 +418,7 @@ export const checkInBooking = async (req, res) => {
     const db = getDB();
     const booking = await db.collection("bookings").findOne({
       _id: new ObjectId(bookingId),
-      messId: new ObjectId(manager.messId),
+      messId: messIdFilter(manager.messId),
       status: "APPROVED",
     });
 
@@ -470,7 +475,7 @@ export const requestCheckout = async (req, res) => {
     const db = getDB();
     const booking = await db.collection("bookings").findOne({
       _id: new ObjectId(bookingId),
-      messId: new ObjectId(manager.messId),
+      messId: messIdFilter(manager.messId),
       status: "CHECKED_IN",
     });
 
@@ -526,7 +531,7 @@ export const checkoutBooking = async (req, res) => {
     const db = getDB();
     const booking = await db.collection("bookings").findOne({
       _id: new ObjectId(bookingId),
-      messId: new ObjectId(manager.messId),
+      messId: messIdFilter(manager.messId),
       $or: [{ status: "CHECKED_IN" }, { status: "CHECKOUT_REQUESTED" }],
     });
 
@@ -576,7 +581,7 @@ export const getManagerDashboard = async (req, res) => {
     if (!manager) return res.status(404).json({ message: "Manager not found" });
 
     const db = getDB();
-    const messId = new ObjectId(manager.messId);
+    const messId = messIdFilter(manager.messId);
 
     const [
       pending,
@@ -631,7 +636,7 @@ export const getManagerStaff = async (req, res) => {
       .collection("users")
       .find(
         {
-          messId: new ObjectId(manager.messId),
+          messId: messIdFilter(manager.messId),
           role: { $in: ["MESS_SECRETARY"] },
         },
         { projection: { password: 0 } },
@@ -659,7 +664,7 @@ export const getActiveBookings = async (req, res) => {
     const bookings = await db
       .collection("bookings")
       .find({
-        messId: new ObjectId(manager.messId),
+        messId: messIdFilter(manager.messId),
         status: { $in: ["APPROVED", "CHECKED_IN", "CHECKOUT_REQUESTED"] },
       })
       .sort({ checkInDate: 1 })
@@ -684,7 +689,7 @@ export const getBookingCounts = async (req, res) => {
     const db = getDB();
     await markExpiredApprovedBookingsAsNoShow(db, manager.messId);
 
-    const messId = new ObjectId(manager.messId);
+    const messId = messIdFilter(manager.messId);
     const counts = await db
       .collection("bookings")
       .aggregate([

@@ -4,6 +4,7 @@
 
 import { ObjectId } from "mongodb";
 import { getDB } from "../config/db.js";
+import { messIdFilter, resolveUserMessId } from "../utils/messHelper.js";
 
 /**
  * Add an extra line-item charge (e.g. food, laundry) to a currently CHECKED_IN booking.
@@ -56,18 +57,17 @@ export const addBookingCharge = async (req, res) => {
         .json({ message: "Only mess manager or secretary can add charges" });
     }
 
-    if (!staff.messId) {
+    const rawMessId = await resolveUserMessId(db, staff);
+    if (!rawMessId) {
       return res
         .status(403)
         .json({ message: "You are not assigned to any mess" });
     }
 
-    const messId = new ObjectId(staff.messId);
-
     // Verify booking exists in the staff member's mess
     const booking = await db.collection("bookings").findOne({
       _id: new ObjectId(bookingId),
-      messId,
+      messId: messIdFilter(rawMessId),
     });
 
     if (!booking) {
@@ -150,7 +150,8 @@ export const getBookingCharges = async (req, res) => {
       });
     } else {
       // Staff members must belong to a mess to query charges
-      if (!staff.messId) {
+      const rawMessId = await resolveUserMessId(db, staff);
+      if (!rawMessId) {
         return res
           .status(403)
           .json({ message: "You are not assigned to any mess" });
@@ -158,7 +159,7 @@ export const getBookingCharges = async (req, res) => {
 
       booking = await db.collection("bookings").findOne({
         _id: new ObjectId(bookingId),
-        messId: new ObjectId(staff.messId),
+        messId: messIdFilter(rawMessId),
       });
     }
 

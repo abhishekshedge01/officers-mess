@@ -3,6 +3,7 @@
 
 import { ObjectId } from "mongodb";
 import { getDB } from "../config/db.js";
+import { messIdFilter, resolveUserMessId } from "../utils/messHelper.js";
 
 // Format a number safely to 2 decimal places
 const money = (n) => Number(Number(n || 0).toFixed(2));
@@ -66,39 +67,49 @@ const baseFilter = (messId, start, end) => ({
 const getRevenue = async (req, res) => {
   try {
     const staff = await getStaff(req);
-    if (!staff?.messId) {
+    const db = getDB();
+    const rawMessId = await resolveUserMessId(db, staff);
+
+    if (!rawMessId) {
       return res
         .status(403)
         .json({ message: "You are not assigned to a mess" });
     }
 
-    const db = getDB();
-    const messId = new ObjectId(staff.messId);
+    const messFilter = ObjectId.isValid(String(rawMessId))
+      ? { _id: new ObjectId(String(rawMessId)) }
+      : { _id: rawMessId };
+
+    let mess = await db.collection("messes").findOne(messFilter);
+    if (!mess) {
+      mess = await db.collection("messes").findOne({ status: "ACTIVE" });
+    }
+
+    const mIdFilter = mess ? messIdFilter(mess._id) : messIdFilter(rawMessId);
     const now = new Date();
     const monthInfo = monthBounds(req.query.month);
     const yearInfo = yearBounds(req.query.year);
 
     // Concurrently fetch monthly paid bills, yearly paid bills, pending bills, and mess details
-    const [monthBills, yearBills, pendingBills, mess] = await Promise.all([
+    const [monthBills, yearBills, pendingBills] = await Promise.all([
       db
         .collection("bills")
-        .find(baseFilter(messId, monthInfo.start, monthInfo.end))
+        .find(baseFilter(mIdFilter, monthInfo.start, monthInfo.end))
         .sort({ paidAt: -1 })
         .toArray(),
       db
         .collection("bills")
-        .find(baseFilter(messId, yearInfo.start, yearInfo.end))
+        .find(baseFilter(mIdFilter, yearInfo.start, yearInfo.end))
         .sort({ paidAt: -1 })
         .toArray(),
       db
         .collection("bills")
         .find({
-          messId,
+          messId: mIdFilter,
           paymentStatus: { $in: ["PENDING", "PAYMENT_PROCESSING"] },
         })
         .sort({ createdAt: -1 })
         .toArray(),
-      db.collection("messes").findOne({ _id: messId }),
     ]);
 
     const sum = (rows, field = "totalAmount") =>
@@ -152,7 +163,7 @@ const getRevenue = async (req, res) => {
       months.map(async (m) => {
         const rows = await db
           .collection("bills")
-          .find(baseFilter(messId, m.start, m.end), {
+          .find(baseFilter(mIdFilter, m.start, m.end), {
             projection: { totalAmount: 1, gatewayFee: 1, gatewayTax: 1 },
           })
           .toArray();

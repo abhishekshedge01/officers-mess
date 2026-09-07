@@ -1,5 +1,6 @@
 import { ObjectId } from "mongodb";
 import { getDB } from "../config/db.js";
+import { messIdFilter, resolveUserMessId } from "../utils/messHelper.js";
 import {
   addDays,
   dateOnly,
@@ -779,12 +780,14 @@ export const getMessBookings = async (req, res) => {
     const u = await db
       .collection("users")
       .findOne({ _id: new ObjectId(req.user.id) });
-    if (!u?.messId)
+
+    const rawMessId = await resolveUserMessId(db, u);
+    if (!rawMessId)
       return res.status(400).json({ message: "No mess assigned" });
 
-    await markExpiredApprovedBookingsAsNoShow(db, u.messId);
+    await markExpiredApprovedBookingsAsNoShow(db, rawMessId);
 
-    const filter = { messId: new ObjectId(u.messId) };
+    const filter = { messId: messIdFilter(rawMessId) };
     if (req.query.status) filter.status = req.query.status;
 
     const bookings = await db
@@ -1116,7 +1119,8 @@ export const checkOut = async (req, res) => {
       role: "MESS_MANAGER",
     });
 
-    if (!manager?.messId)
+    const rawMessId = await resolveUserMessId(db, manager);
+    if (!rawMessId)
       return res
         .status(403)
         .json({ message: "Manager is not assigned to a mess" });
@@ -1126,7 +1130,7 @@ export const checkOut = async (req, res) => {
     const id = new ObjectId(req.params.bookingId);
     const booking = await db.collection("bookings").findOne({
       _id: id,
-      messId: new ObjectId(manager.messId),
+      messId: messIdFilter(rawMessId),
       status: { $in: ["CHECKED_IN", "CHECKOUT_REQUESTED"] },
     });
 

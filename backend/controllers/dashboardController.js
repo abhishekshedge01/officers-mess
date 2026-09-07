@@ -1,5 +1,6 @@
 import { ObjectId } from "mongodb";
 import { getDB } from "../config/db.js";
+import { messIdFilter, resolveUserMessId } from "../utils/messHelper.js";
 
 /**
  * Retrieve role-based statistics and metrics for the dashboard.
@@ -96,17 +97,28 @@ export const getDashboard = async (req, res) => {
 
     // Staff Dashboard (PMC, Mess Manager, Mess Secretary)
     if (["PMC", "MESS_MANAGER", "MESS_SECRETARY"].includes(req.user.role)) {
-      if (!currentUser.messId) {
+      const rawMessId = await resolveUserMessId(db, currentUser);
+      if (!rawMessId) {
         return res
           .status(400)
           .json({ message: "You are not assigned to any mess" });
       }
 
-      const messId = new ObjectId(currentUser.messId);
-      const mess = await messes.findOne({ _id: messId });
+      const messFilter = ObjectId.isValid(String(rawMessId))
+        ? { _id: new ObjectId(String(rawMessId)) }
+        : { _id: rawMessId };
+
+      let mess = await messes.findOne(messFilter);
+      if (!mess) {
+        // Fallback to active mess
+        mess = await messes.findOne({ status: "ACTIVE" });
+      }
+
       if (!mess) {
         return res.status(404).json({ message: "Assigned mess not found" });
       }
+
+      const mIdFilter = messIdFilter(mess._id);
 
       const [
         totalBookings,
@@ -117,13 +129,13 @@ export const getDashboard = async (req, res) => {
         checkedOutBookings,
         rejectedBookings,
       ] = await Promise.all([
-        bookings.countDocuments({ messId }),
-        bookings.countDocuments({ messId, status: "PENDING_MANAGER" }),
-        bookings.countDocuments({ messId, status: "APPROVED" }),
-        bookings.countDocuments({ messId, status: "CHECKED_IN" }),
-        bookings.countDocuments({ messId, status: "CHECKOUT_REQUESTED" }),
-        bookings.countDocuments({ messId, status: "CHECKED_OUT" }),
-        bookings.countDocuments({ messId, status: "REJECTED" }),
+        bookings.countDocuments({ messId: mIdFilter }),
+        bookings.countDocuments({ messId: mIdFilter, status: "PENDING_MANAGER" }),
+        bookings.countDocuments({ messId: mIdFilter, status: "APPROVED" }),
+        bookings.countDocuments({ messId: mIdFilter, status: "CHECKED_IN" }),
+        bookings.countDocuments({ messId: mIdFilter, status: "CHECKOUT_REQUESTED" }),
+        bookings.countDocuments({ messId: mIdFilter, status: "CHECKED_OUT" }),
+        bookings.countDocuments({ messId: mIdFilter, status: "REJECTED" }),
       ]);
 
       // Revenue aggregates from verified PAID bills
@@ -143,7 +155,7 @@ export const getDashboard = async (req, res) => {
           .aggregate([
             {
               $match: {
-                messId,
+                messId: mIdFilter,
                 paymentStatus: "PAID",
                 paidAt: { $gte: monthStart, $lt: nextMonth },
               },
@@ -156,7 +168,7 @@ export const getDashboard = async (req, res) => {
           .aggregate([
             {
               $match: {
-                messId,
+                messId: mIdFilter,
                 paymentStatus: "PAID",
                 paidAt: { $gte: yearStart, $lt: nextYear },
               },
@@ -169,9 +181,9 @@ export const getDashboard = async (req, res) => {
       const monthRevenue = Number(monthRevenueAgg[0]?.total || 0);
       const yearRevenue = Number(yearRevenueAgg[0]?.total || 0);
 
-      const totalRooms = await rooms.countDocuments({ messId });
+      const totalRooms = await rooms.countDocuments({ messId: mIdFilter });
       const availableRooms = await rooms.countDocuments({
-        messId,
+        messId: mIdFilter,
         status: "ACTIVE",
       });
 
