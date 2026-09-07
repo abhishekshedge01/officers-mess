@@ -87,11 +87,7 @@ const getRevenue = async (req, res) => {
         .json({ message: "You are not assigned to a mess" });
     }
 
-    const messFilter = ObjectId.isValid(String(rawMessId))
-      ? { _id: new ObjectId(String(rawMessId)) }
-      : { _id: rawMessId };
-
-    let mess = await db.collection("messes").findOne(messFilter);
+    let mess = await db.collection("messes").findOne({ _id: idFilter(rawMessId) });
     if (!mess) {
       mess = await db.collection("messes").findOne({ status: "ACTIVE" });
     }
