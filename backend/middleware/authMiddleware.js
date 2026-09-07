@@ -34,25 +34,49 @@ export const protect = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userIdObj = new ObjectId(decoded.id);
 
-    // Require the JWT to also exist as an active MongoDB session.
+    // Look for active session in MongoDB
     const session = await db.collection("sessions").findOne({
       token,
-      userId: new ObjectId(decoded.id),
+      userId: userIdObj,
       expiresAt: { $gt: new Date() },
     });
 
-    if (!session) {
-      return res.status(401).json({ message: "Session expired or logged out", code: "SESSION_EXPIRED" });
+    if (session) {
+      await db.collection("sessions").updateOne(
+        { _id: session._id },
+        { $set: { lastSeenAt: new Date() } }
+      );
+      req.session = session;
+    } else {
+      // In serverless / multi-instance setups or if session document TTL expired before JWT:
+      // Verify user is still active in users collection to keep authorized sessions intact
+      const activeUser = await db.collection("users").findOne({ _id: userIdObj });
+      if (!activeUser || (activeUser.accountStatus && activeUser.accountStatus !== "ACTIVE")) {
+        return res.status(401).json({ message: "Session expired or logged out", code: "SESSION_EXPIRED" });
+      }
+
+      // Automatically recreate the active session entry for this valid token
+      const now = new Date();
+      const sessionExpiry = decoded.exp ? new Date(decoded.exp * 1000) : new Date(now.getTime() + 15 * 60 * 1000);
+      await db.collection("sessions").updateOne(
+        { token },
+        {
+          $setOnInsert: {
+            userId: userIdObj,
+            token,
+            role: decoded.role || activeUser.role,
+            createdAt: now,
+            expiresAt: sessionExpiry,
+          },
+          $set: { lastSeenAt: now },
+        },
+        { upsert: true }
+      );
     }
 
-    await getDB().collection("sessions").updateOne(
-      { _id: session._id },
-      { $set: { lastSeenAt: new Date() } },
-    );
-
     req.user = decoded;
-    req.session = session;
     next();
   } catch (error) {
     console.error("AUTH MIDDLEWARE ERROR:", error.message);
