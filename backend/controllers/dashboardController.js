@@ -104,11 +104,7 @@ export const getDashboard = async (req, res) => {
           .json({ message: "You are not assigned to any mess" });
       }
 
-      const messFilter = ObjectId.isValid(String(rawMessId))
-        ? { _id: new ObjectId(String(rawMessId)) }
-        : { _id: rawMessId };
-
-      let mess = await messes.findOne(messFilter);
+      let mess = await messes.findOne({ _id: idFilter(rawMessId) });
       if (!mess) {
         // Fallback to active mess
         mess = await messes.findOne({ status: "ACTIVE" });
