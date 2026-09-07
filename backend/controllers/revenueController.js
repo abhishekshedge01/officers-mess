@@ -46,7 +46,7 @@ const getStaff = async (req) => {
   return db.collection("users").findOne(
     {
       _id: idFilter(req.user.id),
-      role: { $in: ["MESS_MANAGER", "PMC", "MESS_SECRETARY"] },
+      role: { $in: ["MESS_MANAGER", "PMC", "MESS_SECRETARY", "ADMIN"] },
     },
     { projection: { password: 0 } },
   );
@@ -79,7 +79,11 @@ const getRevenue = async (req, res) => {
   try {
     const staff = await getStaff(req);
     const db = getDB();
-    const rawMessId = await resolveUserMessId(db, staff);
+
+    let rawMessId = req.query.messId || staff?.messId;
+    if (!rawMessId) {
+      rawMessId = await resolveUserMessId(db, staff);
+    }
 
     if (!rawMessId) {
       return res

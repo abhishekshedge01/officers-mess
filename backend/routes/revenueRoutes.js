@@ -9,7 +9,7 @@ const router = express.Router();
 router.get(
   "/overview",
   protect,
-  authorizeRoles("MESS_MANAGER", "PMC", "MESS_SECRETARY"),
+  authorizeRoles("MESS_MANAGER", "PMC", "MESS_SECRETARY", "ADMIN"),
   getMessRevenue,
 );
 
